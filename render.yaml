@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: bantu-books-zambia
+    runtime: python
+    buildCommand: ./build.sh
+    startCommand: gunicorn bantu_books.wsgi:application
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bantu-books-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: WEB_CONCURRENCY
+        value: 4
+      - key: DEBUG
+        value: false
+
+databases:
+  - name: bantu-books-db
+    databaseName: bantu_books_db
+    user: bantu_user
