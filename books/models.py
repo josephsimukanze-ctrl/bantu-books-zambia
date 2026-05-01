@@ -10,9 +10,9 @@ import os
 
 class Category(models.Model):
     """Hierarchical Category model for nested categories"""
-    name = models.CharField(max_length=100, unique=True)
-    slug = models.SlugField(unique=True, blank=True)
-    icon = models.CharField(max_length=50, blank=True, default='book')
+    name = models.CharField(max_length=200, unique=True)
+    slug = models.SlugField(unique=True, blank=True, max_length=200) 
+    icon = models.CharField(max_length=100, blank=True, default='book')
     description = models.TextField(blank=True)
     cover_image = models.ImageField(upload_to='category_covers/', null=True, blank=True)
     # Hierarchical relationship - self-referential foreign key
