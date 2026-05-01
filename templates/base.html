@@ -117,7 +117,7 @@
             --gradient-end: #111827;
         }
         
-        /* Apply dark mode colors */
+        /* Apply dark mode colors globally */
         body {
             background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
             color: var(--text-primary);
@@ -125,14 +125,14 @@
             min-height: 100vh;
         }
         
-        /* Card styles */
-        .card, .bg-white {
+        /* Card styles - Tailwind overrides */
+        .card, .bg-white, .bg-gray-50, .bg-gray-100 {
             background-color: var(--card-bg);
             border-color: var(--border-color);
         }
         
         /* Input styles */
-        input, select, textarea {
+        input, select, textarea, .input, .form-input {
             background-color: var(--bg-primary);
             color: var(--text-primary);
             border-color: var(--border-color);
@@ -150,7 +150,7 @@
         }
         
         /* Table styles */
-        table {
+        table, .table {
             background-color: var(--card-bg);
         }
         
@@ -202,21 +202,183 @@
         }
         
         /* Border colors */
-        .border, .border-t, .border-b, .border-l, .border-r {
+        .border, .border-t, .border-b, .border-l, .border-r, .divide-y > :not([hidden]) ~ :not([hidden]) {
             border-color: var(--border-color);
         }
         
-        /* Text colors */
-        .text-gray-500, .text-gray-600 {
-            color: var(--text-muted);
+        /* Text colors - Tailwind overrides */
+        .text-gray-400, .text-gray-500 {
+            color: var(--text-muted) !important;
         }
         
-        .text-gray-700, .text-gray-800 {
+        .text-gray-600, .text-gray-700 {
+            color: var(--text-secondary) !important;
+        }
+        
+        .text-gray-800, .text-gray-900, .text-black {
+            color: var(--text-primary) !important;
+        }
+        
+        /* Dark mode specific text overrides */
+        .dark .text-gray-400, .dark .text-gray-500 {
+            color: var(--text-muted) !important;
+        }
+        
+        .dark .text-gray-600, .dark .text-gray-700 {
+            color: var(--text-secondary) !important;
+        }
+        
+        .dark .text-gray-800, .dark .text-gray-900 {
+            color: var(--text-primary) !important;
+        }
+        
+        /* Heading styles */
+        h1, h2, h3, h4, h5, h6,
+        .h1, .h2, .h3, .h4, .h5, .h6 {
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-primary);
+        }
+        
+        /* Paragraph and span styles */
+        p, span, li, a:not(.btn-primary):not(.btn-secondary) {
+            color: inherit;
+        }
+        
+        /* Dark mode link styles */
+        .dark a:not(.btn-primary):not(.btn-secondary):not(.text-white) {
             color: var(--text-secondary);
         }
         
-        .text-gray-900 {
+        .dark a:hover:not(.btn-primary):not(.btn-secondary) {
+            color: #34d399;
+        }
+        
+        /* Button styles */
+        .btn-primary {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white !important;
+            padding: 0.625rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 1px 3px 0 var(--shadow-color);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px var(--shadow-color);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white !important;
+            padding: 0.625rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px var(--shadow-color);
+        }
+        
+        /* Dark mode toggle button */
+        .dark-mode-toggle {
+            background: transparent;
+            border: 1px solid var(--border-color);
             color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .dark-mode-toggle:hover {
+            background-color: var(--bg-tertiary);
+        }
+        
+        /* Container styles */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        @media (min-width: 640px) {
+            .container {
+                padding: 0 1.5rem;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .container {
+                padding: 0 2rem;
+            }
+        }
+        
+        /* Loader */
+        .loader {
+            border: 3px solid var(--bg-tertiary);
+            border-top: 3px solid #059669;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            animation: slideInRight 0.3s ease-out;
+            background-color: var(--card-bg);
+            border-color: var(--border-color);
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* AI Chat bubble */
+        .ai-chat-bubble {
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .section-title {
+                font-size: 1.5rem;
+            }
         }
         
         /* Custom scrollbar for light mode */
@@ -258,125 +420,17 @@
             transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
             transition-duration: 200ms;
         }
-        
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Poppins', sans-serif;
-            color: var(--text-primary);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
-            color: white;
-            padding: 0.625rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 1px 3px 0 var(--shadow-color);
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px var(--shadow-color);
-        }
-        
-        .btn-secondary {
-            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-            color: white;
-            padding: 0.625rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            border: none;
-            cursor: pointer;
-        }
-        
-        .btn-secondary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px var(--shadow-color);
-        }
-        
-        .container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 1rem;
-        }
-        
-        @media (min-width: 640px) {
-            .container {
-                padding: 0 1.5rem;
-            }
-        }
-        
-        @media (min-width: 1024px) {
-            .container {
-                padding: 0 2rem;
-            }
-        }
-        
-        .loader {
-            border: 3px solid var(--bg-tertiary);
-            border-top: 3px solid #059669;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000;
-            animation: slideInRight 0.3s ease-out;
-        }
-        
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        .ai-chat-bubble {
-            animation: bounce 2s infinite;
-        }
-        
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-        
-        @media (max-width: 768px) {
-            .section-title {
-                font-size: 1.5rem;
-            }
-        }
     </style>
     
     {% block extra_css %}{% endblock %}
 </head>
 <body class="antialiased">
- 
-     
-    
-   
+
+<!-- Dark Mode Toggle Button (Add this anywhere - typically in header) -->
+<button onclick="toggleDarkMode()" class="dark-mode-toggle fixed top-4 right-4 z-50 md:top-20 md:right-4">
+    <i class="fas {% if request.COOKIES.dark_mode == 'true' %}fa-sun{% else %}fa-moon{% endif %} mr-2"></i>
+    <span>{% if request.COOKIES.dark_mode == 'true' %}Light{% else %}Dark{% endif %} Mode</span>
+</button>
 
 <!-- Sidebar Toggle Button -->
 <button onclick="openSidebar()" class="fixed bottom-4 left-4 z-[100] bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-all duration-300">
@@ -404,376 +458,406 @@
         document.body.style.overflow = '';
     }
 </script>
-    <!-- Back to Top Button -->
-    <button id="backToTop" class="fixed bottom-6 right-6 bg-primary-600 text-white p-3 rounded-full shadow-lg hover:bg-primary-700 transition-all duration-300 hidden z-40">
-        <i class="fas fa-arrow-up"></i>
+
+<!-- Back to Top Button -->
+<button id="backToTop" class="fixed bottom-6 right-6 bg-primary-600 text-white p-3 rounded-full shadow-lg hover:bg-primary-700 transition-all duration-300 hidden z-40">
+    <i class="fas fa-arrow-up"></i>
+</button>
+
+<!-- AI Chat Button - Floating -->
+<div id="aiChatButton" class="fixed bottom-6 right-24 z-50">
+    <button id="openAIChat" 
+            class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition transform hover:scale-110 duration-300 ai-chat-bubble group">
+        <i class="fas fa-robot text-2xl"></i>
+        <span class="hidden group-hover:inline ml-2 text-sm font-semibold">Ask AI</span>
     </button>
-    
-    <!-- AI Chat Button - Floating -->
-    <div id="aiChatButton" class="fixed bottom-6 right-24 z-50">
-        <button id="openAIChat" 
-                class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition transform hover:scale-110 duration-300 ai-chat-bubble group">
-            <i class="fas fa-robot text-2xl"></i>
-            <span class="hidden group-hover:inline ml-2 text-sm font-semibold">Ask AI</span>
-        </button>
-    </div>
-    
-    <!-- AI Chat Modal -->
-    <div id="aiChatModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[600px] flex flex-col overflow-hidden">
-            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3 flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <i class="fas fa-robot text-white text-xl"></i>
-                    <h3 class="text-white font-bold">Bantu AI Assistant</h3>
-                    <span class="bg-green-400 text-xs px-2 py-0.5 rounded-full text-white">Free</span>
-                </div>
-                <button id="closeAIChat" class="text-white hover:text-gray-200 transition">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
+</div>
+
+<!-- AI Chat Modal -->
+<div id="aiChatModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[600px] flex flex-col overflow-hidden">
+        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-robot text-white text-xl"></i>
+                <h3 class="text-white font-bold">Bantu AI Assistant</h3>
+                <span class="bg-green-400 text-xs px-2 py-0.5 rounded-full text-white">Free</span>
             </div>
-            
-            <div id="aiChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-900 min-h-[300px]">
-                <div class="flex justify-start">
-                    <div class="bg-gray-200 dark:bg-gray-700 rounded-lg px-3 py-2 max-w-[85%]">
-                        <p class="text-sm dark:text-white">👋 Hi! I'm Bantu AI. Ask me about:</p>
-                        <ul class="text-xs mt-1 list-disc list-inside text-gray-600 dark:text-gray-400">
-                            <li>ECZ exam preparation</li>
-                            <li>Study techniques</li>
-                            <li>Book recommendations</li>
-                            <li>Zambian education</li>
-                        </ul>
-                    </div>
+            <button id="closeAIChat" class="text-white hover:text-gray-200 transition">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div id="aiChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-900 min-h-[300px]">
+            <div class="flex justify-start">
+                <div class="bg-gray-200 dark:bg-gray-700 rounded-lg px-3 py-2 max-w-[85%]">
+                    <p class="text-sm dark:text-white">👋 Hi! I'm Bantu AI. Ask me about:</p>
+                    <ul class="text-xs mt-1 list-disc list-inside text-gray-600 dark:text-gray-400">
+                        <li>ECZ exam preparation</li>
+                        <li>Study techniques</li>
+                        <li>Book recommendations</li>
+                        <li>Zambian education</li>
+                    </ul>
                 </div>
-            </div>
-            
-            <div class="border-t dark:border-gray-700 p-3 bg-white dark:bg-gray-800">
-                <div class="flex gap-2">
-                    <input type="text" id="aiQuestion" 
-                           placeholder="Ask me anything..." 
-                           class="flex-1 px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:border-purple-500 text-sm">
-                    <button id="sendAiQuestion" 
-                            class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
-                <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                    <i class="fas fa-info-circle"></i> Free AI assistant for Zambian students
-                </p>
             </div>
         </div>
-    </div>
-    
-    {% include 'includes/header.html' %}
-    
-    <!-- Messages/Toasts -->
-    {% if messages %}
-    <div class="fixed top-20 right-4 z-50 space-y-2" id="toastContainer">
-        {% for message in messages %}
-        <div class="toast bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 max-w-sm border-l-4 
-            {% if message.tags == 'success' %}border-green-500{% elif message.tags == 'error' %}border-red-500{% elif message.tags == 'warning' %}border-yellow-500{% else %}border-blue-500{% endif %}">
-            <div class="flex items-start">
-                <div class="flex-shrink-0">
-                    {% if message.tags == 'success' %}
-                        <i class="fas fa-check-circle text-green-500 text-xl"></i>
-                    {% elif message.tags == 'error' %}
-                        <i class="fas fa-exclamation-circle text-red-500 text-xl"></i>
-                    {% elif message.tags == 'warning' %}
-                        <i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i>
-                    {% else %}
-                        <i class="fas fa-info-circle text-blue-500 text-xl"></i>
-                    {% endif %}
-                </div>
-                <div class="ml-3 flex-1">
-                    <p class="text-sm text-gray-700 dark:text-gray-300">{{ message }}</p>
-                </div>
-                <button class="ml-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onclick="this.parentElement.parentElement.remove()">
-                    <i class="fas fa-times"></i>
+        
+        <div class="border-t dark:border-gray-700 p-3 bg-white dark:bg-gray-800">
+            <div class="flex gap-2">
+                <input type="text" id="aiQuestion" 
+                       placeholder="Ask me anything..." 
+                       class="flex-1 px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:border-purple-500 text-sm">
+                <button id="sendAiQuestion" 
+                        class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">
+                    <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                <i class="fas fa-info-circle"></i> Free AI assistant for Zambian students
+            </p>
         </div>
-        {% endfor %}
     </div>
-    {% endif %}
+</div>
+
+{% include 'includes/header.html' %}
+
+<!-- Messages/Toasts -->
+{% if messages %}
+<div class="fixed top-20 right-4 z-50 space-y-2" id="toastContainer">
+    {% for message in messages %}
+    <div class="toast bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 max-w-sm border-l-4 
+        {% if message.tags == 'success' %}border-green-500{% elif message.tags == 'error' %}border-red-500{% elif message.tags == 'warning' %}border-yellow-500{% else %}border-blue-500{% endif %}">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                {% if message.tags == 'success' %}
+                    <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                {% elif message.tags == 'error' %}
+                    <i class="fas fa-exclamation-circle text-red-500 text-xl"></i>
+                {% elif message.tags == 'warning' %}
+                    <i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i>
+                {% else %}
+                    <i class="fas fa-info-circle text-blue-500 text-xl"></i>
+                {% endif %}
+            </div>
+            <div class="ml-3 flex-1">
+                <p class="text-sm text-gray-700 dark:text-gray-300">{{ message }}</p>
+            </div>
+            <button class="ml-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onclick="this.parentElement.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Main Content -->
+<main class="py-8 min-h-screen">
+    {% block content %}{% endblock %}
+</main>
+
+{% include 'includes/footer.html' %}
+
+<!-- Scripts -->
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+<script>
+    // Initialize AOS
+    AOS.init({
+        duration: 1000,
+        once: true,
+        offset: 100
+    });
     
-    <!-- Main Content -->
-    <main class="py-8 min-h-screen">
-        {% block content %}{% endblock %}
-    </main>
+    // Back to Top Button
+    const backToTopBtn = document.getElementById('backToTop');
     
-    {% include 'includes/footer.html' %}
+    window.addEventListener('scroll', () => {
+        if (window.pageYOffset > 300) {
+            backToTopBtn.classList.remove('hidden');
+            backToTopBtn.classList.add('flex');
+        } else {
+            backToTopBtn.classList.remove('flex');
+            backToTopBtn.classList.add('hidden');
+        }
+    });
     
-    <!-- Scripts -->
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    backToTopBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
     
-    <script>
-        // Initialize AOS
-        AOS.init({
-            duration: 1000,
-            once: true,
-            offset: 100
-        });
+    // Dark Mode Functions
+    function initDarkMode() {
+        const savedMode = localStorage.getItem('darkMode');
+        const cookieMode = document.cookie.match(/dark_mode=([^;]+)/);
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         
-        // Back to Top Button
-        const backToTopBtn = document.getElementById('backToTop');
+        let isDark = false;
         
-        window.addEventListener('scroll', () => {
-            if (window.pageYOffset > 300) {
-                backToTopBtn.classList.remove('hidden');
-                backToTopBtn.classList.add('flex');
-            } else {
-                backToTopBtn.classList.remove('flex');
-                backToTopBtn.classList.add('hidden');
-            }
-        });
-        
-        backToTopBtn.addEventListener('click', () => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-        
-        // Dark Mode Functions
-        function initDarkMode() {
-            const savedMode = localStorage.getItem('darkMode');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            
-            if (savedMode === 'true' || (savedMode === null && prefersDark)) {
-                document.documentElement.classList.add('dark');
-                document.cookie = "dark_mode=true; path=/";
-            } else {
-                document.documentElement.classList.remove('dark');
-                document.cookie = "dark_mode=false; path=/";
-            }
+        if (savedMode !== null) {
+            isDark = savedMode === 'true';
+        } else if (cookieMode) {
+            isDark = cookieMode[1] === 'true';
+        } else {
+            isDark = prefersDark;
         }
         
-        function toggleDarkMode() {
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('darkMode', 'false');
-                document.cookie = "dark_mode=false; path=/";
-            } else {
+        if (isDark) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        
+        document.cookie = `dark_mode=${isDark}; path=/`;
+        localStorage.setItem('darkMode', isDark);
+        updateDarkModeButtons();
+    }
+    
+    function toggleDarkMode() {
+        const isDark = !document.documentElement.classList.contains('dark');
+        
+        if (isDark) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        
+        localStorage.setItem('darkMode', isDark);
+        document.cookie = `dark_mode=${isDark}; path=/`;
+        updateDarkModeButtons();
+    }
+    
+    function updateDarkModeButtons() {
+        const isDark = document.documentElement.classList.contains('dark');
+        const buttons = document.querySelectorAll('.dark-mode-toggle');
+        
+        buttons.forEach(btn => {
+            const icon = btn.querySelector('i');
+            const text = btn.querySelector('span');
+            
+            if (icon) {
+                if (isDark) {
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                } else {
+                    icon.classList.remove('fa-sun');
+                    icon.classList.add('fa-moon');
+                }
+            }
+            
+            if (text) {
+                text.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+            }
+        });
+    }
+    
+    // Initialize dark mode
+    initDarkMode();
+    
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (localStorage.getItem('darkMode') === null) {
+            if (e.matches) {
                 document.documentElement.classList.add('dark');
-                localStorage.setItem('darkMode', 'true');
-                document.cookie = "dark_mode=true; path=/";
+            } else {
+                document.documentElement.classList.remove('dark');
             }
             updateDarkModeButtons();
         }
+    });
+    
+    // AI Chat Functionality
+    const aiChatModal = document.getElementById('aiChatModal');
+    const openAIChat = document.getElementById('openAIChat');
+    const closeAIChat = document.getElementById('closeAIChat');
+    const sendBtn = document.getElementById('sendAiQuestion');
+    const aiQuestion = document.getElementById('aiQuestion');
+    const aiChatMessages = document.getElementById('aiChatMessages');
+    
+    function openChat() {
+        aiChatModal.classList.remove('hidden');
+        aiChatModal.classList.add('flex');
+        aiQuestion.focus();
+    }
+    
+    function closeChat() {
+        aiChatModal.classList.add('hidden');
+        aiChatModal.classList.remove('flex');
+    }
+    
+    function addAIMessage(message, isUser = false) {
+        const div = document.createElement('div');
+        div.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+        div.innerHTML = `
+            <div class="${isUser ? 'bg-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white'} rounded-lg px-3 py-2 max-w-[85%]">
+                <p class="text-sm whitespace-pre-wrap">${escapeHtml(message)}</p>
+            </div>
+        `;
+        aiChatMessages.appendChild(div);
+        aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+    }
+    
+    function showAITyping() {
+        const div = document.createElement('div');
+        div.id = 'aiTyping';
+        div.className = 'flex justify-start';
+        div.innerHTML = `
+            <div class="bg-gray-200 dark:bg-gray-700 rounded-lg px-4 py-2">
+                <div class="flex gap-1">
+                    <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                    <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                    <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                </div>
+            </div>
+        `;
+        aiChatMessages.appendChild(div);
+        aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+    }
+    
+    function removeAITyping() {
+        const typing = document.getElementById('aiTyping');
+        if (typing) typing.remove();
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    async function sendAIQuestion() {
+        const question = aiQuestion.value.trim();
+        if (!question) return;
         
-        function updateDarkModeButtons() {
-            const isDark = document.documentElement.classList.contains('dark');
-            const buttons = document.querySelectorAll('.dark-mode-toggle');
-            buttons.forEach(btn => {
-                if (isDark) {
-                    btn.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
-                } else {
-                    btn.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
-                }
+        addAIMessage(question, true);
+        aiQuestion.value = '';
+        showAITyping();
+        
+        try {
+            const response = await fetch('/ai-assistant/api/chat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({ question: question })
             });
+            
+            const data = await response.json();
+            removeAITyping();
+            
+            if (data.success) {
+                addAIMessage(data.answer, false);
+            } else if (data.limit_reached) {
+                addAIMessage("⚠️ Daily limit reached. Please try again tomorrow!", false);
+            } else {
+                addAIMessage("Sorry, I encountered an error. Please try again.", false);
+            }
+        } catch (error) {
+            removeAITyping();
+            addAIMessage("Network error. Please check your connection.", false);
         }
-        
-        // Initialize dark mode
-        initDarkMode();
-        
-        // Listen for system theme changes
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-            if (localStorage.getItem('darkMode') === null) {
-                if (e.matches) {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
+    }
+    
+    function getCsrfToken() {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith('csrftoken=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(10));
+                    break;
                 }
             }
+        }
+        return cookieValue;
+    }
+    
+    if (openAIChat) openAIChat.addEventListener('click', openChat);
+    if (closeAIChat) closeAIChat.addEventListener('click', closeChat);
+    if (sendBtn) sendBtn.addEventListener('click', sendAIQuestion);
+    if (aiQuestion) {
+        aiQuestion.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendAIQuestion();
         });
-        
-        // AI Chat Functionality
-        const aiChatModal = document.getElementById('aiChatModal');
-        const openAIChat = document.getElementById('openAIChat');
-        const closeAIChat = document.getElementById('closeAIChat');
-        const sendBtn = document.getElementById('sendAiQuestion');
-        const aiQuestion = document.getElementById('aiQuestion');
-        const aiChatMessages = document.getElementById('aiChatMessages');
-        
-        function openChat() {
-            aiChatModal.classList.remove('hidden');
-            aiChatModal.classList.add('flex');
-            aiQuestion.focus();
-        }
-        
-        function closeChat() {
-            aiChatModal.classList.add('hidden');
-            aiChatModal.classList.remove('flex');
-        }
-        
-        function addAIMessage(message, isUser = false) {
-            const div = document.createElement('div');
-            div.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
-            div.innerHTML = `
-                <div class="${isUser ? 'bg-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white'} rounded-lg px-3 py-2 max-w-[85%]">
-                    <p class="text-sm whitespace-pre-wrap">${escapeHtml(message)}</p>
-                </div>
-            `;
-            aiChatMessages.appendChild(div);
-            aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
-        }
-        
-        function showAITyping() {
-            const div = document.createElement('div');
-            div.id = 'aiTyping';
-            div.className = 'flex justify-start';
-            div.innerHTML = `
-                <div class="bg-gray-200 dark:bg-gray-700 rounded-lg px-4 py-2">
-                    <div class="flex gap-1">
-                        <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                        <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                        <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-                    </div>
-                </div>
-            `;
-            aiChatMessages.appendChild(div);
-            aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
-        }
-        
-        function removeAITyping() {
-            const typing = document.getElementById('aiTyping');
-            if (typing) typing.remove();
-        }
-        
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-        
-        async function sendAIQuestion() {
-            const question = aiQuestion.value.trim();
-            if (!question) return;
-            
-            addAIMessage(question, true);
-            aiQuestion.value = '';
-            showAITyping();
-            
-            try {
-                const response = await fetch('/ai-assistant/api/chat/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCsrfToken()
-                    },
-                    body: JSON.stringify({ question: question })
-                });
-                
-                const data = await response.json();
-                removeAITyping();
-                
-                if (data.success) {
-                    addAIMessage(data.answer, false);
-                } else if (data.limit_reached) {
-                    addAIMessage("⚠️ Daily limit reached. Please try again tomorrow!", false);
-                } else {
-                    addAIMessage("Sorry, I encountered an error. Please try again.", false);
-                }
-            } catch (error) {
-                removeAITyping();
-                addAIMessage("Network error. Please check your connection.", false);
-            }
-        }
-        
-        function getCsrfToken() {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let cookie of cookies) {
-                    cookie = cookie.trim();
-                    if (cookie.startsWith('csrftoken=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(10));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
-        
-        if (openAIChat) openAIChat.addEventListener('click', openChat);
-        if (closeAIChat) closeAIChat.addEventListener('click', closeChat);
-        if (sendBtn) sendBtn.addEventListener('click', sendAIQuestion);
-        if (aiQuestion) {
-            aiQuestion.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') sendAIQuestion();
-            });
-        }
-        
-        // Close modal when clicking outside
+    }
+    
+    // Close modal when clicking outside
+    if (aiChatModal) {
         aiChatModal.addEventListener('click', (e) => {
             if (e.target === aiChatModal) closeChat();
         });
-        
-        // Mobile menu toggle
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobile-menu');
-            if (menu) {
-                menu.classList.toggle('hidden');
-                const icon = document.querySelector('#mobileMenuToggle i');
-                if (icon) {
-                    if (menu.classList.contains('hidden')) {
-                        icon.classList.remove('fa-times');
-                        icon.classList.add('fa-bars');
-                    } else {
-                        icon.classList.remove('fa-bars');
-                        icon.classList.add('fa-times');
-                    }
+    }
+    
+    // Mobile menu toggle
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobile-menu');
+        if (menu) {
+            menu.classList.toggle('hidden');
+            const icon = document.querySelector('#mobileMenuToggle i');
+            if (icon) {
+                if (menu.classList.contains('hidden')) {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                } else {
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-times');
                 }
             }
         }
-        
-        // Show loading spinner on page navigation
-        document.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                if (this.href && !this.href.includes('#') && !this.target) {
-                    const spinner = document.getElementById('loadingSpinner');
-                    if (spinner) spinner.classList.add('flex');
-                }
-            });
-        });
-        
-        // Hide spinner when page loads
-        window.addEventListener('load', () => {
-            const spinner = document.getElementById('loadingSpinner');
-            if (spinner) spinner.classList.remove('flex');
-        });
-        
-        // Auto-hide toasts after 5 seconds
-        setTimeout(() => {
-            const toasts = document.querySelectorAll('.toast');
-            toasts.forEach(toast => {
-                setTimeout(() => {
-                    toast.style.opacity = '0';
-                    setTimeout(() => toast.remove(), 300);
-                }, 4000);
-            });
-        }, 1000);
-        
-        // Add smooth scrolling to all anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                const href = this.getAttribute('href');
-                if (href !== '#') {
-                    e.preventDefault();
-                    const target = document.querySelector(href);
-                    if (target) {
-                        target.scrollIntoView({ behavior: 'smooth' });
-                    }
-                }
-            });
-        });
-        
-        // Add active class to current navigation item
-        const currentLocation = window.location.pathname;
-        document.querySelectorAll('.nav-link').forEach(link => {
-            const linkPath = link.getAttribute('href');
-            if (linkPath && currentLocation === linkPath) {
-                link.classList.add('active');
+    }
+    
+    // Show loading spinner on page navigation
+    document.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (this.href && !this.href.includes('#') && !this.target) {
+                const spinner = document.getElementById('loadingSpinner');
+                if (spinner) spinner.classList.add('flex');
             }
         });
-    </script>
+    });
     
-    {% block extra_js %}{% endblock %}
+    // Hide spinner when page loads
+    window.addEventListener('load', () => {
+        const spinner = document.getElementById('loadingSpinner');
+        if (spinner) spinner.classList.remove('flex');
+    });
+    
+    // Auto-hide toasts after 5 seconds
+    setTimeout(() => {
+        const toasts = document.querySelectorAll('.toast');
+        toasts.forEach(toast => {
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        });
+    }, 1000);
+    
+    // Add smooth scrolling to all anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            const href = this.getAttribute('href');
+            if (href !== '#') {
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        });
+    });
+    
+    // Add active class to current navigation item
+    const currentLocation = window.location.pathname;
+    document.querySelectorAll('.nav-link').forEach(link => {
+        const linkPath = link.getAttribute('href');
+        if (linkPath && currentLocation === linkPath) {
+            link.classList.add('active');
+        }
+    });
+</script>
+
+{% block extra_js %}{% endblock %}
 </body>
 </html>
