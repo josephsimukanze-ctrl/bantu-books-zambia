@@ -50,23 +50,6 @@
                         'sans': ['Inter', 'system-ui', 'sans-serif'],
                         'display': ['Poppins', 'system-ui', 'sans-serif'],
                     },
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in-out',
-                        'slide-in': 'slideIn 0.3s ease-out',
-                        'spin-slow': 'spin 3s linear infinite',
-                        'bounce-slow': 'bounce 2s infinite',
-                        'pulse-slow': 'pulse 3s infinite',
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: '0' },
-                            '100%': { opacity: '1' },
-                        },
-                        slideIn: {
-                            '0%': { transform: 'translateX(-100%)' },
-                            '100%': { transform: 'translateX(0)' },
-                        },
-                    }
                 }
             }
         }
@@ -81,7 +64,7 @@
     <!-- AOS Library for scroll animations -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     
-    <!-- Dark Mode CSS Variables -->
+    <!-- Dark Mode CSS Variables - Fixed for better contrast -->
     <style>
         /* Light Mode (Default) */
         :root {
@@ -89,8 +72,9 @@
             --bg-secondary: #f3f4f6;
             --bg-tertiary: #f9fafb;
             --text-primary: #111827;
-            --text-secondary: #4b5563;
+            --text-secondary: #374151;
             --text-muted: #6b7280;
+            --text-light: #9ca3af;
             --border-color: #e5e7eb;
             --card-bg: #ffffff;
             --header-bg: #ffffff;
@@ -98,23 +82,40 @@
             --shadow-color: rgba(0, 0, 0, 0.1);
             --gradient-start: #f5f7fa;
             --gradient-end: #f3f4f6;
+            --success-bg: #f0fdf4;
+            --success-text: #166534;
+            --warning-bg: #fefce8;
+            --warning-text: #854d0e;
+            --error-bg: #fef2f2;
+            --error-text: #991b1b;
+            --info-bg: #eff6ff;
+            --info-text: #1e40af;
         }
         
-        /* Dark Mode */
+        /* Dark Mode - Improved contrast */
         .dark {
-            --bg-primary: #111827;
-            --bg-secondary: #1f2937;
-            --bg-tertiary: #374151;
-            --text-primary: #f9fafb;
-            --text-secondary: #d1d5db;
-            --text-muted: #9ca3af;
-            --border-color: #374151;
-            --card-bg: #1f2937;
-            --header-bg: #111827;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --text-light: #64748b;
+            --border-color: #334155;
+            --card-bg: #1e293b;
+            --header-bg: #0f172a;
             --footer-bg: #0f172a;
-            --shadow-color: rgba(0, 0, 0, 0.3);
-            --gradient-start: #1f2937;
-            --gradient-end: #111827;
+            --shadow-color: rgba(0, 0, 0, 0.5);
+            --gradient-start: #0f172a;
+            --gradient-end: #1e293b;
+            --success-bg: #064e3b;
+            --success-text: #a7f3d0;
+            --warning-bg: #78350f;
+            --warning-text: #fde68a;
+            --error-bg: #7f1d1d;
+            --error-text: #fecaca;
+            --info-bg: #1e3a8a;
+            --info-text: #bfdbfe;
         }
         
         /* Apply dark mode colors globally */
@@ -125,10 +126,11 @@
             min-height: 100vh;
         }
         
-        /* Card styles - Tailwind overrides */
-        .card, .bg-white, .bg-gray-50, .bg-gray-100 {
-            background-color: var(--card-bg);
-            border-color: var(--border-color);
+        /* Card styles */
+        .card, .bg-white, .bg-gray-50, .bg-gray-100,
+        [class*="bg-white"], [class*="bg-gray-50"], [class*="bg-gray-100"] {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
         }
         
         /* Input styles */
@@ -138,13 +140,6 @@
             border-color: var(--border-color);
         }
         
-        input:focus, select:focus, textarea:focus {
-            border-color: #059669;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
-        }
-        
-        /* Placeholder styles */
         input::placeholder, textarea::placeholder {
             color: var(--text-muted);
         }
@@ -165,7 +160,7 @@
         }
         
         /* Sidebar styles */
-        .sidebar, .bg-gray-50 {
+        .sidebar, [class*="sidebar"] {
             background-color: var(--bg-secondary);
         }
         
@@ -176,38 +171,11 @@
         
         .dropdown-item:hover {
             background-color: var(--bg-tertiary);
-            color: #059669;
+            color: #10b981;
         }
         
-        /* Modal styles */
-        .modal-content {
-            background-color: var(--card-bg);
-            border-color: var(--border-color);
-        }
-        
-        /* Button styles */
-        .btn-outline {
-            border-color: var(--border-color);
-            color: var(--text-secondary);
-        }
-        
-        .btn-outline:hover {
-            background-color: #059669;
-            color: white;
-        }
-        
-        /* Progress bar */
-        .bg-gray-200 {
-            background-color: var(--bg-tertiary);
-        }
-        
-        /* Border colors */
-        .border, .border-t, .border-b, .border-l, .border-r, .divide-y > :not([hidden]) ~ :not([hidden]) {
-            border-color: var(--border-color);
-        }
-        
-        /* Text colors - Tailwind overrides */
-        .text-gray-400, .text-gray-500 {
+        /* Text colors - Full Tailwind override for better dark mode */
+        .text-gray-300, .text-gray-400, .text-gray-500 {
             color: var(--text-muted) !important;
         }
         
@@ -220,7 +188,7 @@
         }
         
         /* Dark mode specific text overrides */
-        .dark .text-gray-400, .dark .text-gray-500 {
+        .dark .text-gray-300, .dark .text-gray-400, .dark .text-gray-500 {
             color: var(--text-muted) !important;
         }
         
@@ -228,29 +196,43 @@
             color: var(--text-secondary) !important;
         }
         
-        .dark .text-gray-800, .dark .text-gray-900 {
+        .dark .text-gray-800, .dark .text-gray-900, .dark .text-black {
             color: var(--text-primary) !important;
         }
         
-        /* Heading styles */
+        /* Ensure white text stays white */
+        .text-white, .dark .text-white {
+            color: #ffffff !important;
+        }
+        
+        /* Headings - always visible */
         h1, h2, h3, h4, h5, h6,
         .h1, .h2, .h3, .h4, .h5, .h6 {
             font-family: 'Poppins', sans-serif;
             color: var(--text-primary);
         }
         
-        /* Paragraph and span styles */
-        p, span, li, a:not(.btn-primary):not(.btn-secondary) {
-            color: inherit;
-        }
-        
-        /* Dark mode link styles */
-        .dark a:not(.btn-primary):not(.btn-secondary):not(.text-white) {
+        /* Paragraph and text elements */
+        p, span, li, div:not(.special), main, article, section {
             color: var(--text-secondary);
         }
         
-        .dark a:hover:not(.btn-primary):not(.btn-secondary) {
-            color: #34d399;
+        /* Dark mode specific element colors */
+        .dark p, .dark span, .dark li, .dark div:not(.special), .dark main, .dark article, .dark section {
+            color: var(--text-secondary);
+        }
+        
+        /* Links */
+        a:not(.btn-primary):not(.btn-secondary):not(.btn):not(.text-white) {
+            color: var(--text-primary);
+        }
+        
+        .dark a:not(.btn-primary):not(.btn-secondary):not(.btn):not(.text-white) {
+            color: #60a5fa;
+        }
+        
+        .dark a:hover:not(.btn-primary):not(.btn-secondary):not(.btn) {
+            color: #93c5fd;
         }
         
         /* Button styles */
@@ -295,7 +277,7 @@
         
         /* Dark mode toggle button */
         .dark-mode-toggle {
-            background: transparent;
+            background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
             padding: 0.5rem 1rem;
@@ -305,7 +287,55 @@
         }
         
         .dark-mode-toggle:hover {
-            background-color: var(--bg-tertiary);
+            background: var(--bg-tertiary);
+        }
+        
+        /* Status badges */
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        
+        .status-approved {
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+        
+        .status-pending {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+        }
+        
+        .status-rejected {
+            background: var(--error-bg);
+            color: var(--error-text);
+        }
+        
+        /* Alert/message boxes */
+        .alert-success {
+            background: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid var(--success-text);
+        }
+        
+        .alert-warning {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+            border: 1px solid var(--warning-text);
+        }
+        
+        .alert-error {
+            background: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid var(--error-text);
+        }
+        
+        .alert-info {
+            background: var(--info-bg);
+            color: var(--info-text);
+            border: 1px solid var(--info-text);
         }
         
         /* Container styles */
@@ -381,7 +411,7 @@
             }
         }
         
-        /* Custom scrollbar for light mode */
+        /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 10px;
             height: 10px;
@@ -401,9 +431,8 @@
             background: #059669;
         }
         
-        /* Dark mode custom scrollbar */
         .dark ::-webkit-scrollbar-track {
-            background: #1f2937;
+            background: #1e293b;
         }
         
         .dark ::-webkit-scrollbar-thumb {
@@ -414,11 +443,30 @@
             background: #6b7280;
         }
         
-        /* Smooth transitions for all elements */
+        /* Smooth transitions */
         * {
             transition-property: background-color, border-color, color, fill, stroke;
             transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
             transition-duration: 200ms;
+        }
+        
+        /* Ensure brand colors remain visible */
+        .text-green-600, .dark .text-green-600 {
+            color: #10b981 !important;
+        }
+        
+        .text-green-400, .dark .text-green-400 {
+            color: #34d399 !important;
+        }
+        
+        /* Fix for any opacity issues */
+        .dark .opacity-50, .dark .opacity-75 {
+            opacity: 0.9;
+        }
+        
+        /* Card shadows in dark mode */
+        .dark .shadow-md, .dark .shadow-lg, .dark .shadow-xl {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
         }
     </style>
     
@@ -426,7 +474,7 @@
 </head>
 <body class="antialiased">
 
-<!-- Dark Mode Toggle Button (Add this anywhere - typically in header) -->
+<!-- Dark Mode Toggle Button -->
 <button onclick="toggleDarkMode()" class="dark-mode-toggle fixed top-4 right-4 z-50 md:top-20 md:right-4">
     <i class="fas {% if request.COOKIES.dark_mode == 'true' %}fa-sun{% else %}fa-moon{% endif %} mr-2"></i>
     <span>{% if request.COOKIES.dark_mode == 'true' %}Light{% else %}Dark{% endif %} Mode</span>
@@ -464,7 +512,7 @@
     <i class="fas fa-arrow-up"></i>
 </button>
 
-<!-- AI Chat Button - Floating -->
+<!-- AI Chat Button -->
 <div id="aiChatButton" class="fixed bottom-6 right-24 z-50">
     <button id="openAIChat" 
             class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition transform hover:scale-110 duration-300 ai-chat-bubble group">
@@ -491,7 +539,7 @@
             <div class="flex justify-start">
                 <div class="bg-gray-200 dark:bg-gray-700 rounded-lg px-3 py-2 max-w-[85%]">
                     <p class="text-sm dark:text-white">👋 Hi! I'm Bantu AI. Ask me about:</p>
-                    <ul class="text-xs mt-1 list-disc list-inside text-gray-600 dark:text-gray-400">
+                    <ul class="text-xs mt-1 list-disc list-inside text-gray-600 dark:text-gray-300">
                         <li>ECZ exam preparation</li>
                         <li>Study techniques</li>
                         <li>Book recommendations</li>
@@ -511,7 +559,7 @@
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
-            <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
                 <i class="fas fa-info-circle"></i> Free AI assistant for Zambian students
             </p>
         </div>
@@ -539,7 +587,7 @@
                 {% endif %}
             </div>
             <div class="ml-3 flex-1">
-                <p class="text-sm text-gray-700 dark:text-gray-300">{{ message }}</p>
+                <p class="text-sm text-gray-700 dark:text-gray-200">{{ message }}</p>
             </div>
             <button class="ml-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onclick="this.parentElement.parentElement.remove()">
                 <i class="fas fa-times"></i>
@@ -782,48 +830,21 @@
         });
     }
     
-    // Close modal when clicking outside
     if (aiChatModal) {
         aiChatModal.addEventListener('click', (e) => {
             if (e.target === aiChatModal) closeChat();
         });
     }
     
-    // Mobile menu toggle
-    function toggleMobileMenu() {
+    // Function for mobile menu (will be available globally)
+    window.toggleMobileMenu = function() {
         const menu = document.getElementById('mobile-menu');
         if (menu) {
             menu.classList.toggle('hidden');
-            const icon = document.querySelector('#mobileMenuToggle i');
-            if (icon) {
-                if (menu.classList.contains('hidden')) {
-                    icon.classList.remove('fa-times');
-                    icon.classList.add('fa-bars');
-                } else {
-                    icon.classList.remove('fa-bars');
-                    icon.classList.add('fa-times');
-                }
-            }
         }
-    }
+    };
     
-    // Show loading spinner on page navigation
-    document.querySelectorAll('a').forEach(link => {
-        link.addEventListener('click', function(e) {
-            if (this.href && !this.href.includes('#') && !this.target) {
-                const spinner = document.getElementById('loadingSpinner');
-                if (spinner) spinner.classList.add('flex');
-            }
-        });
-    });
-    
-    // Hide spinner when page loads
-    window.addEventListener('load', () => {
-        const spinner = document.getElementById('loadingSpinner');
-        if (spinner) spinner.classList.remove('flex');
-    });
-    
-    // Auto-hide toasts after 5 seconds
+    // Auto-hide toasts
     setTimeout(() => {
         const toasts = document.querySelectorAll('.toast');
         toasts.forEach(toast => {
@@ -833,29 +854,6 @@
             }, 4000);
         });
     }, 1000);
-    
-    // Add smooth scrolling to all anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            const href = this.getAttribute('href');
-            if (href !== '#') {
-                e.preventDefault();
-                const target = document.querySelector(href);
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth' });
-                }
-            }
-        });
-    });
-    
-    // Add active class to current navigation item
-    const currentLocation = window.location.pathname;
-    document.querySelectorAll('.nav-link').forEach(link => {
-        const linkPath = link.getAttribute('href');
-        if (linkPath && currentLocation === linkPath) {
-            link.classList.add('active');
-        }
-    });
 </script>
 
 {% block extra_js %}{% endblock %}

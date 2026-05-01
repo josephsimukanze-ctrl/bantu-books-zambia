@@ -27,7 +27,7 @@ urlpatterns = [
     # Saved Books
     path('save/<slug:slug>/', views.save_book, name='save_book'),
     path('is-saved/<slug:slug>/', views.is_book_saved, name='is_book_saved'),
-    
+    path('admin-dashboard/', views.admin_analytics, name='admin_dashboard'), 
     # Upload & Dashboard
     path('upload/', views.upload_book, name='upload_book'),
     path('track-view/<slug:slug>/', views.track_view, name='track_view'),

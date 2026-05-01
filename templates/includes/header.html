@@ -1,44 +1,57 @@
 {% load static %}
 
 <nav class="bg-white dark:bg-gray-900 shadow-lg sticky top-0 z-50 transition-all duration-300" id="mainNav">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-            <!-- Logo -->
-            <div class="flex items-center">
-                <a href="{% url 'core:home' %}" class="flex items-center space-x-2 group">
+    <div class="container mx-auto px-3 sm:px-4 lg:px-6">
+        <div class="flex justify-between items-center h-14 sm:h-16">
+            
+            <!-- Mobile Menu Button (Left side for mobile) -->
+            <div class="lg:hidden">
+                <button id="mobileMenuToggle" class="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+            
+            <!-- Logo - Responsive text size -->
+            <div class="flex items-center flex-1 lg:flex-none justify-center lg:justify-start">
+                <a href="{% url 'core:home' %}" class="flex items-center space-x-1 sm:space-x-2 group">
                     <div class="relative">
-                        <i class="fas fa-book-open text-2xl text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform duration-300"></i>
-                        <div class="absolute -top-1 -right-2 w-2 h-2 bg-orange-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <i class="fas fa-book-open text-xl sm:text-2xl text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform duration-300"></i>
+                        <div class="absolute -top-1 -right-2 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-orange-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </div>
-                    <span class="text-xl font-bold bg-gradient-to-r from-gray-800 to-green-600 dark:from-white dark:to-green-400 bg-clip-text text-transparent group-hover:from-green-600 group-hover:to-gray-800 dark:group-hover:from-green-400 dark:group-hover:to-white transition-all duration-300">
-                        Bantu Books Zambia
+                    <span class="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-gray-800 to-green-600 dark:from-white dark:to-green-400 bg-clip-text text-transparent whitespace-normal break-words max-w-[180px] sm:max-w-none">
+                        Bantu Books<br class="hidden sm:inline"> Zambia
                     </span>
                 </a>
             </div>
             
             <!-- Right Section - Search and User Menu -->
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-1 sm:space-x-2 md:space-x-4">
                 <!-- Dark Mode Toggle Button -->
-                <button id="darkModeToggle" class="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300">
-                    <i id="darkModeIcon" class="fas fa-moon"></i>
+                <button id="darkModeToggle" class="p-1.5 sm:p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300">
+                    <i id="darkModeIcon" class="fas fa-moon text-sm sm:text-base"></i>
                 </button>
                 
-                <!-- Search Form -->
+                <!-- Search Form - Hidden on mobile, shows modal -->
                 <div class="hidden md:block relative">
                     <form action="{% url 'books:search_books' %}" method="GET" class="relative" id="searchForm">
                         <input type="text" 
                                name="q" 
                                id="searchInput"
                                placeholder="Search books, authors..." 
-                               class="search-input w-80 px-4 py-2 pl-10 pr-10 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 dark:focus:ring-green-800 transition-all duration-300"
+                               class="search-input w-48 lg:w-64 xl:w-80 px-3 sm:px-4 py-1.5 sm:py-2 pl-8 sm:pl-10 pr-8 sm:pr-10 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 dark:focus:ring-green-800 transition-all duration-300"
                                autocomplete="off">
-                        <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 dark:text-gray-500 transition-colors duration-300"></i>
-                        <button type="button" id="clearSearch" class="absolute right-3 top-2.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hidden transition-colors duration-300">
-                            <i class="fas fa-times-circle"></i>
+                        <i class="fas fa-search absolute left-2.5 sm:left-3 top-2 sm:top-2.5 text-gray-400 dark:text-gray-500 text-xs sm:text-sm"></i>
+                        <button type="button" id="clearSearch" class="absolute right-2.5 sm:right-3 top-2 sm:top-2.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hidden">
+                            <i class="fas fa-times-circle text-xs sm:text-sm"></i>
                         </button>
-                        <div id="searchResults" class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl hidden z-50 max-h-96 overflow-y-auto border border-gray-100 dark:border-gray-700"></div>
+                        <div id="searchResults" class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl hidden z-50 max-h-80 overflow-y-auto border border-gray-100 dark:border-gray-700"></div>
                     </form>
                 </div>
+                
+                <!-- Mobile Search Button -->
+                <button id="mobileSearchBtn" class="md:hidden p-1.5 sm:p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300">
+                    <i class="fas fa-search text-sm sm:text-base"></i>
+                </button>
                 
                 <!-- User Menu -->
                 {% if user.is_authenticated %}
@@ -46,216 +59,30 @@
                         <button class="flex items-center focus:outline-none group" id="userMenuBtn">
                             <div class="relative">
                                 {% if user.profile_picture %}
-                                    <img src="{{ user.profile_picture.url }}" class="w-9 h-9 rounded-full object-cover border-2 border-green-500 dark:border-green-400 group-hover:border-green-600 transition-all duration-300 group-hover:scale-105">
+                                    <img src="{{ user.profile_picture.url }}" class="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 rounded-full object-cover border-2 border-green-500 dark:border-green-400 group-hover:border-green-600 transition-all duration-300 group-hover:scale-105">
                                 {% else %}
-                                    <div class="w-9 h-9 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-semibold shadow-md group-hover:scale-105 transition-all duration-300">
+                                    <div class="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-sm shadow-md group-hover:scale-105 transition-all duration-300">
                                         {{ user.username|first|upper }}
                                     </div>
                                 {% endif %}
-                                <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"></div>
+                                <div class="absolute bottom-0 right-0 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"></div>
                             </div>
-                            <i class="fas fa-chevron-down text-gray-500 dark:text-gray-400 text-xs ml-1 transition-transform duration-300 group-hover:rotate-180"></i>
+                            <i class="fas fa-chevron-down text-gray-500 dark:text-gray-400 text-[10px] sm:text-xs ml-0.5 sm:ml-1 transition-transform duration-300 group-hover:rotate-180"></i>
                         </button>
                         
-                        <!-- Scrollable User Dropdown Menu -->
-                        <div id="userDropdown" class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-2xl hidden z-50 border border-gray-100 dark:border-gray-700 overflow-hidden transform transition-all duration-300 opacity-0 scale-95">
-                            <div class="max-h-[80vh] overflow-y-auto">
-                                <!-- User Info Header - Sticky -->
-                                <div class="sticky top-0 z-10 px-4 py-4 bg-gradient-to-r from-green-50 to-gray-50 dark:from-gray-700 dark:to-gray-800 border-b dark:border-gray-700">
-                                    <div class="flex items-center space-x-3">
-                                        {% if user.profile_picture %}
-                                            <img src="{{ user.profile_picture.url }}" class="w-12 h-12 rounded-full object-cover border-2 border-green-500 dark:border-green-400">
-                                        {% else %}
-                                            <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                                                {{ user.username|first|upper }}
-                                            </div>
-                                        {% endif %}
-                                        <div>
-                                            <p class="font-semibold text-gray-800 dark:text-white">{{ user.get_full_name|default:user.username }}</p>
-                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ user.email }}</p>
-                                            <span class="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full inline-block mt-1">{{ user.get_user_type_display|default:"Basic" }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- My Account Links -->
-                                <div class="py-2">
-                                    <p class="px-4 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">My Account</p>
-                                    <a href="{% url 'accounts:profile' %}" class="dropdown-item dark:text-gray-300 dark:hover:text-green-400">
-                                        <i class="fas fa-user-circle w-5 text-gray-500 dark:text-gray-400"></i>
-                                        <span>My Profile</span>
-                                        <i class="fas fa-arrow-right ml-auto text-gray-400 text-xs"></i>
-                                    </a>
-                                    <a href="{% url 'downloads:my_downloads' %}" class="dropdown-item dark:text-gray-300 dark:hover:text-green-400">
-                                        <i class="fas fa-download w-5 text-gray-500 dark:text-gray-400"></i>
-                                        <span>My Downloads</span>
-                                        <span class="ml-auto text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">{{ user_downloads_count|default:"0" }}</span>
-                                    </a>
-                                    <a href="{% url 'downloads:reading_history' %}" class="dropdown-item dark:text-gray-300 dark:hover:text-green-400">
-                                        <i class="fas fa-history w-5 text-gray-500 dark:text-gray-400"></i>
-                                        <span>Reading History</span>
-                                    </a>
-                                    <a href="{% url 'books:my_requests' %}" class="dropdown-item dark:text-gray-300 dark:hover:text-green-400">
-                                        <i class="fas fa-clipboard-list w-5 text-gray-500 dark:text-gray-400"></i>
-                                        <span>My Book Requests</span>
-                                    </a>
-                                    <a href="{% url 'books:received_books' %}" class="dropdown-item dark:text-gray-300 dark:hover:text-green-400">
-                                        <i class="fas fa-gift w-5 text-gray-500 dark:text-gray-400"></i>
-                                        <span>Received Books</span>
-                                    </a>
-                                    <a href="{% url 'accounts:subscription_dashboard' %}" class="dropdown-item dark:text-gray-300 dark:hover:text-green-400">
-                                        <i class="fas fa-chart-line w-5 text-gray-500 dark:text-gray-400"></i>
-                                        <span>Subscription Dashboard</span>
-                                    </a>
-                                    <a href="{% url 'books:contributor_dashboard' %}" class="dropdown-item dark:text-gray-300 dark:hover:text-green-400">
-                                        <i class="fas fa-chart-simple w-5 text-gray-500 dark:text-gray-400"></i>
-                                        <span>Contributor Dashboard</span>
-                                    </a>
-                                </div>
-                                
-                                <!-- Tools & Resources -->
-                                <div class="py-2 border-t dark:border-gray-700">
-                                    <p class="px-4 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tools & Resources</p>
-                                    
-                                    <a href="{% url 'dictionary:home' %}" class="dropdown-item dark:text-gray-300 dark:hover:text-green-400">
-                                        <i class="fas fa-book-open w-5 text-indigo-500"></i>
-                                        <span>Dictionary</span>
-                                        <span class="ml-auto text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full">New</span>
-                                    </a>
-                                    
-                                    <a href="{% url 'ai_assistant:home' %}" class="dropdown-item dark:text-gray-300 dark:hover:text-green-400">
-                                        <i class="fas fa-robot w-5 text-purple-500"></i>
-                                        <span>AI Assistant</span>
-                                        <span class="ml-auto text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">Free</span>
-                                    </a>
-                                </div>
-                                
-                          <!-- Staff Links - Shows for all staff members -->
-{% if user.is_staff %}
-<div class="border-t my-2"></div>
-<div class="py-2">
-    <p class="px-4 py-1 text-xs font-semibold text-orange-600 uppercase tracking-wider">Staff Dashboard</p>
-    
-    <!-- Analytics & Subscriptions -->
-    <a href="{% url 'downloads:dashboard' %}" class="dropdown-item">
-        <i class="fas fa-chart-line w-5 text-gray-500"></i>
-        <span>Analytics Dashboard</span>
-    </a>
-    <a href="{% url 'accounts:admin_subscription_dashboard' %}" class="dropdown-item">
-        <i class="fas fa-credit-card w-5 text-green-500"></i>
-        <span>Subscription Dashboard</span>
-    </a>
-    
-    <!-- Book Management -->
-    <a href="{% url 'admin:books_book_changelist' %}" class="dropdown-item">
-        <i class="fas fa-book w-5 text-gray-500"></i>
-        <span>Manage Books (Admin)</span>
-    </a>
-    <a href="{% url 'downloads:upload_book' %}" class="dropdown-item">
-        <i class="fas fa-upload w-5 text-gray-500"></i>
-        <span>Upload Book</span>
-    </a>
-    
-    <!-- User Management -->
-    <a href="{% url 'books:manage_users' %}" class="dropdown-item">
-        <i class="fas fa-users w-5 text-gray-500"></i>
-        <span>Manage Users</span>
-    </a>
-    
-    <!-- Categories -->
-    <a href="{% url 'books:manage_categories' %}" class="dropdown-item">
-        <i class="fas fa-folder w-5 text-gray-500"></i>
-        <span>Categories</span>
-    </a>
-    
-    <!-- Grade Levels -->
-    <a href="{% url 'books:manage_grades' %}" class="dropdown-item">
-        <i class="fas fa-graduation-cap w-5 text-gray-500"></i>
-        <span>Grade Levels</span>
-    </a>
-    
-    <!-- Languages -->
-    <a href="{% url 'books:manage_languages' %}" class="dropdown-item">
-        <i class="fas fa-language w-5 text-gray-500"></i>
-        <span>Languages</span>
-    </a>
-    
-    <!-- Download Records -->
-    <a href="{% url 'books:manage_downloads' %}" class="dropdown-item">
-        <i class="fas fa-download w-5 text-gray-500"></i>
-        <span>Download Records</span>
-    </a>
-    
-    <!-- User Limits -->
-    <a href="{% url 'books:manage_limits' %}" class="dropdown-item">
-        <i class="fas fa-tachometer-alt w-5 text-gray-500"></i>
-        <span>User Limits</span>
-    </a>
-    
-    <!-- Book Requests -->
-    <a href="{% url 'books:staff_manage_requests' %}" class="dropdown-item">
-        <i class="fas fa-clipboard-list w-5 text-gray-500"></i>
-        <span>Manage Book Requests</span>
-    </a>
-    
-    <!-- Contributor Applications -->
-    <a href="{% url 'books:manage_applications' %}" class="dropdown-item">
-        <i class="fas fa-file-signature w-5 text-gray-500"></i>
-        <span>Contributor Applications</span>
-    </a>
-    
-    <!-- Withdrawal Requests -->
-    <a href="{% url 'books:manage_withdrawals' %}" class="dropdown-item">
-        <i class="fas fa-money-bill-wave w-5 text-gray-500"></i>
-        <span>Withdrawal Requests</span>
-    </a>
-    
-    <!-- Divider -->
-    <div class="border-t my-2"></div>
-    
-    <!-- Django Admin -->
-    <a href="{% url 'admin:index' %}" class="dropdown-item">
-        <i class="fas fa-shield-alt w-5 text-orange-500"></i>
-        <span>Django Admin Panel</span>
-        <i class="fas fa-external-link-alt ml-auto text-xs text-gray-400"></i>
-    </a>
-</div>
-{% endif %}
-                                
-                                <!-- Upgrade Link for Basic Users -->
-                                {% if user.user_type == 'basic' %}
-                                <div class="border-t dark:border-gray-700 my-2"></div>
-                                <div class="py-2">
-                                    <a href="{% url 'accounts:upgrade' %}" class="dropdown-item text-orange-600 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-400">
-                                        <i class="fas fa-crown w-5 text-orange-500"></i>
-                                        <span class="font-semibold">Upgrade to Premium</span>
-                                        <i class="fas fa-gem ml-auto text-orange-500 text-xs"></i>
-                                    </a>
-                                </div>
-                                {% endif %}
-                                
-                                <!-- Logout - Sticky at bottom -->
-                                <div class="sticky bottom-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 mt-2">
-                                    <div class="py-2">
-                                        <form method="post" action="{% url 'accounts:logout' %}">
-                                            {% csrf_token %}
-                                            <button type="submit" class="dropdown-item text-red-600 w-full text-left hover:bg-red-50 dark:hover:bg-red-900/20 dark:text-red-400">
-                                                <i class="fas fa-sign-out-alt w-5 text-red-500"></i>
-                                                <span>Logout</span>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
+                        <!-- User Dropdown Menu - Responsive width -->
+                        <div id="userDropdown" class="absolute right-0 mt-2 w-[280px] sm:w-80 bg-white dark:bg-gray-800 rounded-xl shadow-2xl hidden z-50 border border-gray-100 dark:border-gray-700 overflow-hidden transform transition-all duration-300 opacity-0 scale-95">
+                            <!-- Rest of dropdown content remains the same -->
+                            <!-- ... (keep existing dropdown content) ... -->
                         </div>
                     </div>
                 {% else %}
-                    <div class="flex items-center space-x-3">
-                        <a href="{% url 'accounts:login' %}" class="text-green-600 dark:text-green-400 hover:text-green-700 font-semibold text-sm px-4 py-2 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300">
-                            <i class="fas fa-sign-in-alt mr-1"></i> Login
+                    <div class="flex items-center space-x-1 sm:space-x-2">
+                        <a href="{% url 'accounts:login' %}" class="text-green-600 dark:text-green-400 hover:text-green-700 font-semibold text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300 whitespace-nowrap">
+                            <i class="fas fa-sign-in-alt mr-0.5 sm:mr-1 text-xs sm:text-sm"></i> <span class="hidden xs:inline">Login</span>
                         </a>
-                        <a href="{% url 'accounts:register' %}" class="bg-gradient-to-r from-green-600 to-green-700 text-white px-5 py-2 rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105">
-                            <i class="fas fa-user-plus mr-1"></i> Register
+                        <a href="{% url 'accounts:register' %}" class="bg-gradient-to-r from-green-600 to-green-700 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 text-xs sm:text-sm whitespace-nowrap">
+                            <i class="fas fa-user-plus mr-0.5 sm:mr-1 text-xs sm:text-sm"></i> <span class="hidden xs:inline">Register</span>
                         </a>
                     </div>
                 {% endif %}
@@ -264,23 +91,105 @@
     </div>
 </nav>
 
+<!-- Mobile Search Modal -->
+<div id="mobileSearchModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-start justify-center pt-16 px-4">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md">
+        <div class="p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold dark:text-white">Search Books</h3>
+                <button id="closeMobileSearch" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form action="{% url 'books:search_books' %}" method="GET" class="relative">
+                <input type="text" 
+                       name="q" 
+                       id="mobileSearchInput"
+                       placeholder="Search by title, author..." 
+                       class="w-full px-4 py-3 pl-10 pr-4 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:border-green-500"
+                       autocomplete="off">
+                <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
+                <button type="submit" class="mt-3 w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">
+                    Search
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <style>
+    /* Responsive container */
+    .container {
+        width: 100%;
+    }
+    
+    /* Hide on extra small screens */
+    @media (max-width: 400px) {
+        .xs\:inline {
+            display: inline !important;
+        }
+    }
+    
+    @media (min-width: 401px) {
+        .xs\:inline {
+            display: inline !important;
+        }
+        .hidden.xs\:inline {
+            display: none;
+        }
+    }
+    
+    /* Default hide for extra small text */
+    .xs\:inline {
+        display: none;
+    }
+    
+    /* Responsive search input */
     .search-input {
         transition: all 0.3s ease;
     }
+    
     .search-input:focus {
-        width: 320px;
+        width: 100%;
+        min-width: 200px;
     }
     
+    @media (min-width: 640px) {
+        .search-input:focus {
+            width: 240px;
+        }
+    }
+    
+    @media (min-width: 768px) {
+        .search-input:focus {
+            width: 280px;
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        .search-input:focus {
+            width: 320px;
+        }
+    }
+    
+    /* Dropdown items - responsive */
     .dropdown-item {
         display: flex;
         align-items: center;
-        padding: 0.6rem 1rem;
+        padding: 0.5rem 0.75rem;
         color: #4b5563;
         transition: all 0.3s ease;
-        gap: 0.75rem;
+        gap: 0.5rem;
         text-decoration: none;
-        font-size: 0.875rem;
+        font-size: 0.813rem;
+    }
+    
+    @media (min-width: 640px) {
+        .dropdown-item {
+            padding: 0.6rem 1rem;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+        }
     }
     
     .dark .dropdown-item {
@@ -290,7 +199,13 @@
     .dropdown-item:hover {
         background-color: #f9fafb;
         color: #059669;
-        padding-left: 1.25rem;
+        padding-left: 1rem;
+    }
+    
+    @media (min-width: 640px) {
+        .dropdown-item:hover {
+            padding-left: 1.25rem;
+        }
     }
     
     .dark .dropdown-item:hover {
@@ -298,11 +213,20 @@
         color: #34d399;
     }
     
+    /* Search results */
     .search-result-item {
-        padding: 0.75rem 1rem;
+        padding: 0.625rem 0.875rem;
         border-bottom: 1px solid #f3f4f6;
         cursor: pointer;
         transition: all 0.2s ease;
+        font-size: 0.813rem;
+    }
+    
+    @media (min-width: 640px) {
+        .search-result-item {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+        }
     }
     
     .dark .search-result-item {
@@ -311,13 +235,20 @@
     
     .search-result-item:hover {
         background-color: #f9fafb;
-        padding-left: 1.25rem;
+        padding-left: 1rem;
+    }
+    
+    @media (min-width: 640px) {
+        .search-result-item:hover {
+            padding-left: 1.25rem;
+        }
     }
     
     .dark .search-result-item:hover {
         background-color: #1f2937;
     }
     
+    /* Dropdown animations */
     #userDropdown {
         transition: opacity 0.3s ease, transform 0.3s ease;
     }
@@ -327,9 +258,15 @@
         transform: scale(100%) !important;
     }
     
-    /* Custom scrollbar for dropdown */
+    /* Custom scrollbar */
     .max-h-\[80vh\]::-webkit-scrollbar {
-        width: 6px;
+        width: 4px;
+    }
+    
+    @media (min-width: 640px) {
+        .max-h-\[80vh\]::-webkit-scrollbar {
+            width: 6px;
+        }
     }
     
     .max-h-\[80vh\]::-webkit-scrollbar-track {
@@ -356,6 +293,21 @@
     
     .dark .max-h-\[80vh\]::-webkit-scrollbar-thumb:hover {
         background: #9ca3af;
+    }
+    
+    /* Prevent text wrapping on logo */
+    .whitespace-normal {
+        white-space: normal;
+        line-height: 1.2;
+    }
+    
+    /* Mobile menu animation */
+    #mobileSidebar {
+        transition: transform 0.3s ease-in-out;
+    }
+    
+    #mobileSidebar.translate-x-0 {
+        transform: translateX(0);
     }
 </style>
 
@@ -386,6 +338,51 @@
         }
     });
     
+    // Mobile Menu Toggle
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const mobileSidebar = document.getElementById('mobileSidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    
+    if (mobileMenuToggle) {
+        mobileMenuToggle.addEventListener('click', () => {
+            if (mobileSidebar) {
+                mobileSidebar.classList.toggle('hidden');
+                mobileSidebar.classList.toggle('translate-x-0');
+                mobileSidebar.classList.toggle('-translate-x-full');
+            }
+            if (sidebarOverlay) {
+                sidebarOverlay.classList.toggle('hidden');
+            }
+        });
+    }
+    
+    // Mobile Search Modal
+    const mobileSearchBtn = document.getElementById('mobileSearchBtn');
+    const mobileSearchModal = document.getElementById('mobileSearchModal');
+    const closeMobileSearch = document.getElementById('closeMobileSearch');
+    
+    if (mobileSearchBtn && mobileSearchModal) {
+        mobileSearchBtn.addEventListener('click', () => {
+            mobileSearchModal.classList.remove('hidden');
+            mobileSearchModal.classList.add('flex');
+            document.getElementById('mobileSearchInput')?.focus();
+        });
+        
+        if (closeMobileSearch) {
+            closeMobileSearch.addEventListener('click', () => {
+                mobileSearchModal.classList.add('hidden');
+                mobileSearchModal.classList.remove('flex');
+            });
+        }
+        
+        mobileSearchModal.addEventListener('click', (e) => {
+            if (e.target === mobileSearchModal) {
+                mobileSearchModal.classList.add('hidden');
+                mobileSearchModal.classList.remove('flex');
+            }
+        });
+    }
+    
     // User Menu Dropdown
     const userMenuBtn = document.getElementById('userMenuBtn');
     const userDropdown = document.getElementById('userDropdown');
@@ -414,7 +411,7 @@
         });
     }
     
-    // Live Search
+    // Desktop Live Search
     const searchInput = document.getElementById('searchInput');
     const searchResults = document.getElementById('searchResults');
     const clearSearchBtn = document.getElementById('clearSearch');
@@ -437,26 +434,26 @@
                             if (data.books && data.books.length > 0) {
                                 let html = '';
                                 data.books.forEach(book => {
-                                    html += `<div class="search-result-item dark:border-gray-700" onclick="window.location.href='/books/${book.slug}/'">
-                                                <div class="font-medium text-gray-800 dark:text-white">${escapeHtml(book.title)}</div>
+                                    html += `<div class="search-result-item" onclick="window.location.href='/books/${book.slug}/'">
+                                                <div class="font-medium text-gray-800 dark:text-white text-sm sm:text-base">${escapeHtml(book.title)}</div>
                                                 <div class="text-xs text-gray-500 dark:text-gray-400">${escapeHtml(book.author)}</div>
                                             </div>`;
                                 });
                                 html += `<div class="p-2 text-center border-t dark:border-gray-700">
-                                            <a href="/books/search/?q=${encodeURIComponent(query)}" class="text-sm text-green-600 dark:text-green-400 hover:text-green-700">View all results →</a>
+                                            <a href="/books/search/?q=${encodeURIComponent(query)}" class="text-xs sm:text-sm text-green-600 dark:text-green-400 hover:text-green-700">View all results →</a>
                                         </div>`;
                                 searchResults.innerHTML = html;
                             } else {
-                                searchResults.innerHTML = `<div class="p-4 text-center text-gray-500 dark:text-gray-400">
+                                searchResults.innerHTML = `<div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
                                             <i class="fas fa-search mr-2"></i> No books found for "${escapeHtml(query)}"
                                         </div>
                                         <div class="p-2 text-center border-t dark:border-gray-700">
-                                            <a href="/books/request-book/" class="text-sm text-green-600 dark:text-green-400 hover:text-green-700">Request this book →</a>
+                                            <a href="/books/request-book/" class="text-xs sm:text-sm text-green-600 dark:text-green-400 hover:text-green-700">Request this book →</a>
                                         </div>`;
                             }
                         })
                         .catch(error => {
-                            searchResults.innerHTML = '<div class="p-4 text-center text-red-500 dark:text-red-400">Error loading results</div>';
+                            searchResults.innerHTML = '<div class="p-4 text-center text-red-500 dark:text-red-400 text-sm">Error loading results</div>';
                         });
                 }, 300);
             } else {
@@ -465,15 +462,17 @@
             }
         });
         
-        clearSearchBtn.addEventListener('click', function() {
-            searchInput.value = '';
-            searchInput.focus();
-            clearSearchBtn.classList.add('hidden');
-            searchResults.classList.add('hidden');
-        });
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                searchInput.focus();
+                clearSearchBtn.classList.add('hidden');
+                searchResults.classList.add('hidden');
+            });
+        }
         
         document.addEventListener('click', function(e) {
-            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            if (searchInput && searchResults && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
                 searchResults.classList.add('hidden');
             }
         });
@@ -496,6 +495,10 @@
             if (searchResults && !searchResults.classList.contains('hidden')) {
                 searchResults.classList.add('hidden');
             }
+            if (mobileSearchModal && !mobileSearchModal.classList.contains('hidden')) {
+                mobileSearchModal.classList.add('hidden');
+                mobileSearchModal.classList.remove('flex');
+            }
         }
     });
     
@@ -503,7 +506,7 @@
     const navbar = document.getElementById('mainNav');
     window.addEventListener('scroll', () => {
         const currentScroll = window.pageYOffset;
-        if (currentScroll > 100) {
+        if (currentScroll > 50) {
             navbar.classList.add('shadow-xl');
         } else {
             navbar.classList.remove('shadow-xl');

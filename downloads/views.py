@@ -996,16 +996,25 @@ def update_reading_progress(request):
 
 
 # ==================== UPLOAD BOOK ====================
-
-from django.shortcuts import render, redirect
-from django.contrib.admin.views.decorators import staff_member_required
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.core.files.uploadedfile import UploadedFile
+from books.models import Book, Category, GradeLevel, Language
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.files.uploadedfile import UploadedFile
 from books.models import Book, Category, GradeLevel, Language
 
-@staff_member_required
+@login_required
 def upload_book(request):
-    """Upload a new book (admin/staff only) with 3-level category hierarchy"""
+    """Upload a new book (contributors only) with 3-level category hierarchy"""
+    
+    # Check if user is an approved contributor
+    if not hasattr(request.user, 'contributor_profile') or not request.user.contributor_profile.is_active:
+        messages.error(request, 'You must be an approved contributor to upload books.')
+        return redirect('books:apply_contributor')
     
     # Get data for dropdowns - make sure to get ALL active records
     categories = Category.objects.filter(is_active=True).order_by('order')
@@ -1013,7 +1022,6 @@ def upload_book(request):
     languages = Language.objects.filter(is_active=True).order_by('order')
     
     # Build category hierarchy information for the template
-    # Categorize categories by their level
     top_level_categories = categories.filter(level=0, parent__isnull=True)
     subcategories = categories.filter(level=1)
     subjects = categories.filter(level=2)
@@ -1026,6 +1034,16 @@ def upload_book(request):
     print(f"Grade levels count: {grade_levels.count()}")
     print(f"Languages count: {languages.count()}")
     
+    # Prepare context for GET request and error returns
+    context = {
+        'categories': categories,
+        'grade_levels': grade_levels,
+        'languages': languages,
+        'top_level_categories': top_level_categories,
+        'subcategories': subcategories,
+        'subjects': subjects,
+    }
+    
     if request.method == 'POST':
         try:
             # Basic Information
@@ -1034,16 +1052,10 @@ def upload_book(request):
             description = request.POST.get('description')
             
             # 3-Level Category Selection
-            # The form uses three dropdowns, but only the final selected category (subject/course)
-            # is submitted as 'category' since that's the actual category for the book
-            category_id = request.POST.get('category')  # This is the final subject/course ID
-            
-            # Optional: You can also capture the intermediate selections for debugging/validation
-            top_level_id = request.POST.get('top_level_category')
-            sub_category_id = request.POST.get('sub_category')
+            category_id = request.POST.get('category')
             
             # Grade Level and Language
-            grade_level_id = request.POST.get('grade_level')
+            grade_level_id = request.POST.get('grade')
             language_id = request.POST.get('language')
             
             # Pricing
@@ -1063,89 +1075,33 @@ def upload_book(request):
             # Validation
             if not title:
                 messages.error(request, 'Title is required')
-                return render(request, 'downloads/upload_book.html', {
-                    'categories': categories,
-                    'grade_levels': grade_levels,
-                    'languages': languages,
-                    'top_level_categories': top_level_categories,
-                    'subcategories': subcategories,
-                    'subjects': subjects,
-                })
+                return render(request, 'downloads/upload_book.html', context)
             
             if not author:
                 messages.error(request, 'Author is required')
-                return render(request, 'downloads/upload_book.html', {
-                    'categories': categories,
-                    'grade_levels': grade_levels,
-                    'languages': languages,
-                    'top_level_categories': top_level_categories,
-                    'subcategories': subcategories,
-                    'subjects': subjects,
-                })
+                return render(request, 'downloads/upload_book.html', context)
             
             if not description:
                 messages.error(request, 'Description is required')
-                return render(request, 'downloads/upload_book.html', {
-                    'categories': categories,
-                    'grade_levels': grade_levels,
-                    'languages': languages,
-                    'top_level_categories': top_level_categories,
-                    'subcategories': subcategories,
-                    'subjects': subjects,
-                })
+                return render(request, 'downloads/upload_book.html', context)
             
             if not pdf_file:
                 messages.error(request, 'PDF file is required')
-                return render(request, 'downloads/upload_book.html', {
-                    'categories': categories,
-                    'grade_levels': grade_levels,
-                    'languages': languages,
-                    'top_level_categories': top_level_categories,
-                    'subcategories': subcategories,
-                    'subjects': subjects,
-                })
+                return render(request, 'downloads/upload_book.html', context)
             
-            # Validate that a final category (subject/course) is selected
             if not category_id:
-                messages.error(request, 'Please select a Subject/Course category (the final level of the hierarchy)')
-                return render(request, 'downloads/upload_book.html', {
-                    'categories': categories,
-                    'grade_levels': grade_levels,
-                    'languages': languages,
-                    'top_level_categories': top_level_categories,
-                    'subcategories': subcategories,
-                    'subjects': subjects,
-                })
-            
-            # Optional: Validate the selected category is indeed a level 2 category (subject)
-            selected_category = Category.objects.filter(id=category_id, is_active=True).first()
-            if selected_category and selected_category.level != 2:
-                messages.warning(request, f'Note: Selected category "{selected_category.name}" is not a Subject/Course level. For best organization, please use Subject/Course level categories.')
-                # Still allow it, but show warning
+                messages.error(request, 'Please select a Subject/Course category')
+                return render(request, 'downloads/upload_book.html', context)
             
             # Validate file size for PDF (max 50MB)
             if pdf_file.size > 50 * 1024 * 1024:
                 messages.error(request, 'PDF file must be less than 50MB')
-                return render(request, 'downloads/upload_book.html', {
-                    'categories': categories,
-                    'grade_levels': grade_levels,
-                    'languages': languages,
-                    'top_level_categories': top_level_categories,
-                    'subcategories': subcategories,
-                    'subjects': subjects,
-                })
+                return render(request, 'downloads/upload_book.html', context)
             
             # Validate cover image size if provided (max 5MB)
             if cover_image and cover_image.size > 5 * 1024 * 1024:
                 messages.error(request, 'Cover image must be less than 5MB')
-                return render(request, 'downloads/upload_book.html', {
-                    'categories': categories,
-                    'grade_levels': grade_levels,
-                    'languages': languages,
-                    'top_level_categories': top_level_categories,
-                    'subcategories': subcategories,
-                    'subjects': subjects,
-                })
+                return render(request, 'downloads/upload_book.html', context)
             
             # Validate pages is a positive integer
             try:
@@ -1179,10 +1135,11 @@ def upload_book(request):
                 publisher=publisher.strip() if publisher else '',
                 pages=pages,
                 isbn=isbn.strip() if isbn else '',
-                is_active=True
+                is_active=False,  # Needs admin approval
+                contributor=request.user,  # Track who uploaded
             )
             
-            # Log the successful upload with category hierarchy info
+            # Log the successful upload
             category_path = []
             if book.category:
                 cat = book.category
@@ -1191,29 +1148,21 @@ def upload_book(request):
                     cat = cat.parent
                     category_path.insert(0, cat.name)
             
-            print(f"Book uploaded successfully: {title}")
+            print(f"Book uploaded successfully by {request.user.username}: {title}")
             print(f"Category path: {' → '.join(category_path) if category_path else 'None'}")
             
-            messages.success(request, f'Book "{title}" uploaded successfully!')
-            return redirect('books:book_detail', slug=book.slug)
+            messages.success(request, f'✨ Book "{title}" uploaded successfully! It will be reviewed by our team.')
+            return redirect('downloads:dashboard')
             
         except Exception as e:
             messages.error(request, f'Error uploading book: {str(e)}')
             print(f"Upload error: {e}")
             import traceback
             traceback.print_exc()
+            return render(request, 'downloads/upload_book.html', context)
     
     # GET request - show upload form
-    context = {
-        'categories': categories,
-        'grade_levels': grade_levels,
-        'languages': languages,
-        'top_level_categories': top_level_categories,
-        'subcategories': subcategories,
-        'subjects': subjects,
-    }
     return render(request, 'downloads/upload_book.html', context)
-
 # ==================== DASHBOARD ====================
 import csv
 import zipfile
@@ -1362,9 +1311,162 @@ from datetime import timedelta
 from .models import BookDownload, BookView, BookReadOnline, UserDownloadLimit
 from books.models import Book, Category
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib import messages
+from django.db.models import Sum, Avg, Count, Q
+from django.utils import timezone
+from datetime import timedelta
+from books.models import Book, Category, GradeLevel, Language
+from .models import BookDownload, BookView, BookReadOnline, UserDownloadLimit
+
+# Keep the admin dashboard for staff only
 @staff_member_required
+def admin_dashboard(request):
+    """Admin dashboard for staff users with enhanced analytics"""
+    # Move the existing dashboard code here
+    # ... (your existing dashboard code)
+    pass
+
+# Create a separate dashboard for contributors
+@login_required
 def dashboard(request):
-    """Downloads dashboard for staff users with enhanced analytics"""
+    """Contributor dashboard - shows personal stats and uploaded books"""
+    
+    # Check if user is admin/staff - redirect to admin dashboard
+    if request.user.is_staff:
+        return redirect('downloads:admin_dashboard')
+    
+    # Get contributor's books
+    books = Book.objects.filter(contributor=request.user).order_by('-created_at')
+    
+    # Calculate contributor stats
+    total_books = books.count()
+    pending_books = books.filter(is_active=False).count()
+    approved_books = books.filter(is_active=True).count()
+    rejected_books = books.filter(is_active=False, admin_notes__isnull=False).count()
+    
+    # Calculate earnings (K5 per approved book)
+    earnings_per_book = 5.00
+    total_earnings = approved_books * earnings_per_book
+    
+    # Get download and view stats
+    total_downloads = sum(book.downloads_count or 0 for book in books)
+    total_views = sum(book.views_count or 0 for book in books)
+    
+    # Get recent downloads for contributor's books
+    from .models import BookDownload
+    recent_downloads = BookDownload.objects.filter(
+        book__in=books
+    ).select_related('book', 'user').order_by('-downloaded_at')[:10]
+    
+    # Get monthly earnings (last 12 months)
+    monthly_labels = []
+    monthly_earnings = []
+    today = timezone.now().date()
+    
+    for i in range(11, -1, -1):
+        month_date = today.replace(day=1) - timedelta(days=30*i)
+        month_start = month_date.replace(day=1)
+        
+        if month_start.month == 12:
+            next_month = month_start.replace(year=month_start.year + 1, month=1, day=1)
+        else:
+            next_month = month_start.replace(month=month_start.month + 1, day=1)
+        
+        # Count books approved in this month
+        approved_in_month = books.filter(
+            is_active=True,
+            updated_at__gte=month_start,
+            updated_at__lt=next_month
+        ).count()
+        
+        monthly_labels.append(month_start.strftime('%b %Y'))
+        monthly_earnings.append(approved_in_month * earnings_per_book)
+    
+    # Calculate available balance (earnings - withdrawals)
+    from .models import WithdrawalRequest
+    withdrawals = WithdrawalRequest.objects.filter(
+        contributor=request.user,
+        status='completed'
+    ).aggregate(total=Sum('amount'))['total'] or 0
+    
+    available_balance = total_earnings - withdrawals
+    
+    # Minimum withdrawal amount
+    min_withdrawal = 250
+    can_withdraw = available_balance >= min_withdrawal
+    
+    # Top performing books
+    top_books = books.filter(is_active=True).order_by('-downloads_count')[:5]
+    
+    # Recent activity timeline
+    recent_activity = []
+    
+    # Add approved books to activity
+    for book in books.filter(is_active=True).order_by('-updated_at')[:5]:
+        recent_activity.append({
+            'type': 'approved',
+            'message': f'Your book "{book.title}" was approved!',
+            'date': book.updated_at,
+            'icon': 'check-circle',
+            'color': 'green'
+        })
+    
+    # Add downloads to activity
+    for download in recent_downloads[:5]:
+        recent_activity.append({
+            'type': 'download',
+            'message': f'Someone downloaded "{download.book.title}"',
+            'date': download.downloaded_at,
+            'icon': 'download',
+            'color': 'blue'
+        })
+    
+    # Sort activity by date (newest first)
+    recent_activity.sort(key=lambda x: x['date'], reverse=True)
+    
+    context = {
+        # Basic stats
+        'total_books': total_books,
+        'pending_books': pending_books,
+        'approved_books': approved_books,
+        'rejected_books': rejected_books,
+        
+        # Earnings
+        'total_earnings': total_earnings,
+        'available_balance': available_balance,
+        'earnings_per_book': earnings_per_book,
+        'can_withdraw': can_withdraw,
+        'min_withdrawal': min_withdrawal,
+        'amount_needed': max(0, min_withdrawal - available_balance),
+        
+        # Charts
+        'monthly_labels': monthly_labels,
+        'monthly_earnings': monthly_earnings,
+        
+        # Stats
+        'total_downloads': total_downloads,
+        'total_views': total_views,
+        
+        # Lists
+        'books': books[:10],
+        'recent_books': books[:5],
+        'top_books': top_books,
+        'recent_downloads': recent_downloads,
+        'recent_activity': recent_activity[:10],
+        
+        # Flags
+        'has_books': total_books > 0,
+    }
+    
+    return render(request, 'downloads/dashboard.html', context)
+
+# Keep the original admin dashboard functionality for staff
+@staff_member_required
+def admin_analytics(request):
+    """Admin analytics dashboard with full statistics"""
     
     # Date ranges for trending data
     today = timezone.now().date()
@@ -1402,7 +1504,7 @@ def dashboard(request):
         total_downloads=Sum('books__downloads_count')
     ).order_by('-total_downloads')[:5]
     
-    # ==================== MONTHLY DOWNLOAD TRENDS (Last 12 Months) ====================
+    # ==================== MONTHLY DOWNLOAD TRENDS ====================
     monthly_labels = []
     monthly_downloads = []
     
@@ -1423,7 +1525,7 @@ def dashboard(request):
         monthly_labels.append(month_start.strftime('%b %Y'))
         monthly_downloads.append(downloads_count)
     
-    # ==================== DAILY DOWNLOAD TRENDS (Last 7 Days) ====================
+    # ==================== DAILY DOWNLOAD TRENDS ====================
     daily_labels = []
     daily_downloads = []
     
@@ -1607,7 +1709,7 @@ def dashboard(request):
         'last_month': last_month,
     }
     
-    return render(request, 'downloads/dashboard.html', context)
+    return render(request, 'downloads/admin_dashboard.html', context)
 def track_view(request, slug):
     """Track book view via AJAX (simple version)"""
     try:

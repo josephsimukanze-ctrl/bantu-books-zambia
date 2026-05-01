@@ -1,523 +1,491 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load humanize %}
+{% load crispy_forms_tags %}
 
-{% block title %}Contributor Dashboard - Bantu Books Zambia{% endblock %}
+{% block title %}Upload New Book - Bantu Books Zambia{% endblock %}
 
 {% block extra_css %}
 <style>
-    .stat-card {
-        transition: all 0.3s ease;
+    .upload-form-container {
         background: white;
         border-radius: 1rem;
-        padding: 1.5rem;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-    }
-    .stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    }
-    .earning-item {
-        transition: all 0.2s ease;
-    }
-    .earning-item:hover {
-        background-color: #f9fafb;
-        transform: translateX(4px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
     }
     
-    /* Signature Pad Styles */
-    .signature-pad {
-        border: 2px solid #e5e7eb;
-        border-radius: 0.5rem;
-        background: white;
-        cursor: crosshair;
+    .form-step {
+        display: none;
     }
     
-    .signature-pad canvas {
-        width: 100%;
-        height: 200px;
-        border-radius: 0.5rem;
+    .form-step.active {
+        display: block;
+        animation: fadeIn 0.5s ease;
     }
     
-    .agreement-content {
-        max-height: 400px;
-        overflow-y: auto;
-        padding: 1rem;
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        padding: 1rem 2rem;
         background: #f9fafb;
         border-radius: 0.5rem;
-        border: 1px solid #e5e7eb;
     }
     
-    .rate-card {
-        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    .step {
+        flex: 1;
+        text-align: center;
+        position: relative;
+    }
+    
+    .step-number {
+        width: 40px;
+        height: 40px;
+        background: #e5e7eb;
+        color: #6b7280;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .step.active .step-number {
+        background: #059669;
         color: white;
     }
     
-    .dashboard-link {
-        transition: all 0.2s ease;
-    }
-    .dashboard-link:hover {
-        transform: translateY(-2px);
+    .step.completed .step-number {
+        background: #10b981;
+        color: white;
     }
     
-    .status-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        font-size: 0.7rem;
+    .step-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+    
+    .step.active .step-label {
+        color: #059669;
         font-weight: 600;
     }
-    .status-approved { background: #dcfce7; color: #059669; }
-    .status-pending { background: #fef3c7; color: #d97706; }
-    .status-rejected { background: #fee2e2; color: #dc2626; }
     
-    .trend-up { color: #10b981; }
-    .trend-down { color: #ef4444; }
+    .preview-image {
+        max-width: 200px;
+        max-height: 200px;
+        object-fit: cover;
+        border-radius: 0.5rem;
+        border: 2px solid #e5e7eb;
+    }
+    
+    .dark .upload-form-container {
+        background: #1f2937;
+    }
+    
+    .dark .step-indicator {
+        background: #374151;
+    }
+    
+    .dark .step-number {
+        background: #4b5563;
+        color: #d1d5db;
+    }
+    
+    .dark .step.active .step-number {
+        background: #059669;
+    }
+    
+    .dark .step.completed .step-number {
+        background: #10b981;
+    }
+    
+    .dark .step-label {
+        color: #9ca3af;
+    }
+    
+    .dark .step.active .step-label {
+        color: #34d399;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    {% if contributor and contributor.is_active %}
-        <!-- Contributor Dashboard -->
-        <div class="mb-8 flex flex-wrap justify-between items-center gap-4">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-800 mb-2">Contributor Dashboard</h1>
-                <p class="text-gray-600">Welcome back, {{ user.get_full_name|default:user.username }}!</p>
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+    <div class="mb-6">
+       <a href="{% url 'downloads:upload_book' %}" class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2 shadow-md dashboard-link">
+    <i class="fas fa-plus"></i>
+    <span>Upload New Book</span>
+</a>
+        <p class="text-gray-600 dark:text-gray-400">Share your educational content with Zambian students</p>
+    </div>
+    
+    <div class="upload-form-container">
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+            <div class="step active" id="step1Indicator">
+                <div class="step-number">1</div>
+                <div class="step-label">Book Details</div>
             </div>
-            <div class="flex gap-3">
-                <a href="{% url 'books:earnings_dashboard' %}" class="bg-purple-600 text-white px-5 py-2 rounded-lg hover:bg-purple-700 transition flex items-center gap-2 shadow-md dashboard-link">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Earnings Dashboard</span>
-                </a>
-                <a href="{% url 'downloads:upload_book' %}" class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2 shadow-md dashboard-link">
-                    <i class="fas fa-plus"></i>
-                    <span>Upload New Book</span>
-                </a>
+            <div class="step" id="step2Indicator">
+                <div class="step-number">2</div>
+                <div class="step-label">Upload Files</div>
             </div>
-        </div>
-        
-        <!-- Rate Card -->
-        <div class="rate-card rounded-xl shadow-lg p-6 mb-8">
-            <div class="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                    <p class="text-green-100 text-sm">Earning Rate</p>
-                    <p class="text-3xl font-bold">K5.00 per book</p>
-                    <p class="text-green-100 text-sm mt-1">Earn for every approved book you upload</p>
-                </div>
-                <div class="text-right">
-                    <p class="text-green-100 text-sm">Next Payout</p>
-                    <p class="font-semibold">15th of each month</p>
-                    <p class="text-green-100 text-sm">Minimum K250</p>
-                </div>
+            <div class="step" id="step3Indicator">
+                <div class="step-number">3</div>
+                <div class="step-label">Preview & Submit</div>
             </div>
         </div>
         
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-sm">Total Earnings</p>
-                        <p class="text-2xl font-bold text-green-600">K{{ total_earnings|floatformat:2|intcomma }}</p>
-                        <p class="text-xs text-gray-400">All time earnings</p>
-                    </div>
-                    <div class="bg-green-100 rounded-full p-3">
-                        <i class="fas fa-money-bill-wave text-green-600 text-xl"></i>
-                    </div>
-                </div>
-                {% if earnings_trend %}
-                <div class="mt-2 text-xs">
-                    {% if earnings_trend > 0 %}
-                    <span class="trend-up"><i class="fas fa-arrow-up"></i> +{{ earnings_trend }}%</span>
-                    <span class="text-gray-400"> vs last month</span>
-                    {% endif %}
-                </div>
-                {% endif %}
-            </div>
+        <!-- Form -->
+        <form id="uploadForm" method="post" enctype="multipart/form-data" class="p-6">
+            {% csrf_token %}
             
-            <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-sm">Available Balance</p>
-                        <p class="text-2xl font-bold text-blue-600">K{{ available_balance|floatformat:2|intcomma }}</p>
-                        <p class="text-xs text-gray-400">Ready for withdrawal</p>
-                    </div>
-                    <div class="bg-blue-100 rounded-full p-3">
-                        <i class="fas fa-wallet text-blue-600 text-xl"></i>
-                    </div>
-                </div>
-                {% if available_balance >= 250 %}
-                <a href="{% url 'books:request_withdrawal' %}" class="mt-3 inline-block text-sm bg-orange-500 text-white px-3 py-1 rounded-lg hover:bg-orange-600 transition">
-                    <i class="fas fa-money-bill-wave mr-1"></i> Withdraw Now
-                </a>
-                {% else %}
-                <p class="text-xs text-gray-400 mt-2">Need K{{ amount_needed|default:250 }} more to withdraw</p>
-                {% endif %}
-            </div>
-            
-            <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-sm">Books Uploaded</p>
-                        <p class="text-2xl font-bold text-purple-600">{{ total_books_uploaded|default:0 }}</p>
-                        <p class="text-xs text-gray-400">Total books submitted</p>
-                    </div>
-                    <div class="bg-purple-100 rounded-full p-3">
-                        <i class="fas fa-book text-purple-600 text-xl"></i>
-                    </div>
-                </div>
-                <div class="mt-2 flex gap-2 justify-center text-xs">
-                    <span class="text-green-600">{{ approved_books_count|default:0 }} approved</span>
-                    <span class="text-yellow-600">{{ pending_books_count|default:0 }} pending</span>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-sm">Uploads Left Today</p>
-                        <p class="text-2xl font-bold text-orange-600">{{ remaining_uploads }}</p>
-                        <p class="text-xs text-gray-400">Daily limit: 10 books</p>
-                    </div>
-                    <div class="bg-orange-100 rounded-full p-3">
-                        <i class="fas fa-upload text-orange-600 text-xl"></i>
-                    </div>
-                </div>
-                <div class="mt-2 w-full bg-gray-200 rounded-full h-1">
-                    <div class="bg-orange-500 rounded-full h-1" style="width: {% widthratio uploads_used 10 100 %}%"></div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Quick Stats Row -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div class="bg-green-50 rounded-lg p-4 text-center">
-                <p class="text-2xl font-bold text-green-600">{{ total_downloads|default:"0"|intcomma }}</p>
-                <p class="text-sm text-gray-600">Total Downloads</p>
-            </div>
-            <div class="bg-blue-50 rounded-lg p-4 text-center">
-                <p class="text-2xl font-bold text-blue-600">{{ total_views|default:"0"|intcomma }}</p>
-                <p class="text-sm text-gray-600">Total Views</p>
-            </div>
-            <div class="bg-purple-50 rounded-lg p-4 text-center">
-                <p class="text-2xl font-bold text-purple-600">{{ monthly_earnings|default:"0"|floatformat:2 }}</p>
-                <p class="text-sm text-gray-600">This Month's Earnings</p>
-            </div>
-            <div class="bg-orange-50 rounded-lg p-4 text-center">
-                <p class="text-2xl font-bold text-orange-600">{{ member_since_days|default:"0" }}</p>
-                <p class="text-sm text-gray-600">Days as Contributor</p>
-            </div>
-        </div>
-        
-        <!-- Recent Earnings -->
-        <div class="bg-white rounded-xl shadow-md mb-8">
-            <div class="border-b px-6 py-4 flex justify-between items-center">
-                <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                    <i class="fas fa-chart-line text-green-600"></i>
-                    Recent Earnings
-                </h2>
-                <a href="{% url 'books:earnings_dashboard' %}" class="text-purple-600 hover:text-purple-700 text-sm">
-                    View All <i class="fas fa-arrow-right ml-1"></i>
-                </a>
-            </div>
-            <div class="divide-y max-h-96 overflow-y-auto">
-                {% for earning in earnings %}
-                <div class="earning-item px-6 py-3 flex justify-between items-center">
-                    <div>
-                        <p class="font-semibold text-gray-800">{{ earning.description|default:"Book Upload" }}</p>
-                        <p class="text-xs text-gray-500">{{ earning.created_at|date:"M d, Y H:i" }}</p>
-                        {% if earning.book %}
-                        <p class="text-xs text-gray-500">Book: {{ earning.book.title }}</p>
-                        {% endif %}
-                    </div>
-                    <div class="text-right">
-                        <p class="text-lg font-bold text-green-600">+K{{ earning.amount|floatformat:2 }}</p>
-                    </div>
-                </div>
-                {% empty %}
-                <div class="px-6 py-8 text-center text-gray-500">
-                    <i class="fas fa-chart-line text-4xl mb-2"></i>
-                    <p>No earnings yet. Upload books to start earning!</p>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        
-        <!-- Recent Books -->
-        <div class="bg-white rounded-xl shadow-md mb-8">
-            <div class="border-b px-6 py-4 flex justify-between items-center">
-                <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                    <i class="fas fa-book text-green-600"></i>
-                    Your Uploaded Books
-                </h2>
-                <a href="{% url 'books:earnings_dashboard' %}" class="text-purple-600 hover:text-purple-700 text-sm">
-                    View All Books <i class="fas fa-arrow-right ml-1"></i>
-                </a>
-            </div>
-            <div class="divide-y max-h-96 overflow-y-auto">
-                {% for book in recent_books %}
-                <div class="px-6 py-3 flex justify-between items-center hover:bg-gray-50 transition">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-2">
-                            <a href="{% url 'books:book_detail' book.slug %}" class="font-semibold text-gray-800 hover:text-green-600">
-                                {{ book.title }}
-                            </a>
-                            <span class="status-badge status-{% if book.is_active %}approved{% else %}pending{% endif %}">
-                                {% if book.is_active %}Approved{% else %}Pending{% endif %}
-                            </span>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-1">{{ book.created_at|date:"M d, Y" }}</p>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-sm text-gray-600">{{ book.downloads_count }} downloads</div>
-                        <div class="text-sm text-gray-600">{{ book.views_count }} views</div>
-                        {% if book.is_active %}
-                        <div class="text-xs text-green-600 font-semibold">+K5.00 earned</div>
-                        {% endif %}
-                    </div>
-                </div>
-                {% empty %}
-                <div class="px-6 py-8 text-center text-gray-500">
-                    <i class="fas fa-book-open text-4xl mb-2"></i>
-                    <p>No books uploaded yet.</p>
-                    <a href="{% url 'downloads:upload_book' %}" class="mt-2 inline-block text-green-600 hover:underline">Upload your first book →</a>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        
-        <!-- Withdrawal History -->
-        {% if withdrawals %}
-        <div class="bg-white rounded-xl shadow-md">
-            <div class="border-b px-6 py-4">
-                <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                    <i class="fas fa-history text-orange-600"></i>
-                    Withdrawal History
-                </h2>
-            </div>
-            <div class="divide-y">
-                {% for withdrawal in withdrawals %}
-                <div class="px-6 py-3 flex justify-between items-center hover:bg-gray-50 transition">
-                    <div>
-                        <p class="font-semibold text-gray-800">{{ withdrawal.get_payment_method_display }}</p>
-                        <p class="text-xs text-gray-500">{{ withdrawal.created_at|date:"M d, Y" }}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-lg font-bold text-red-600">-K{{ withdrawal.amount|floatformat:2 }}</p>
-                        <span class="status-badge 
-                            {% if withdrawal.status == 'completed' %}status-approved
-                            {% elif withdrawal.status == 'pending' %}status-pending
-                            {% else %}status-rejected{% endif %}">
-                            {{ withdrawal.get_status_display }}
-                        </span>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-        
-    {% elif has_application and application.status == 'pending' %}
-        <!-- Pending Application -->
-        <div class="text-center py-12">
-            <div class="bg-yellow-50 rounded-lg p-8 max-w-2xl mx-auto">
-                <i class="fas fa-clock text-5xl text-yellow-600 mb-4"></i>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Application Pending Review</h2>
-                <p class="text-gray-600 mb-4">Your application is currently being reviewed by our team.</p>
-                <div class="bg-white rounded-lg p-4 text-left">
-                    <p class="font-semibold">Status: <span class="text-yellow-600">{{ application.get_status_display }}</span></p>
-                    <p class="text-sm text-gray-500">Submitted on: {{ application.created_at|date:"F d, Y" }}</p>
-                    {% if application.admin_notes %}
-                    <p class="text-sm text-gray-500 mt-2">Admin Note: {{ application.admin_notes }}</p>
-                    {% endif %}
-                </div>
-                <p class="text-sm text-gray-500 mt-4">We'll notify you via email once a decision is made.</p>
-            </div>
-        </div>
-        
-    {% elif has_application and application.status == 'approved' and not agreement_signed %}
-        <!-- Agreement Signing Required -->
-        <div id="agreementSection" class="max-w-4xl mx-auto">
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
-                    <h2 class="text-2xl font-bold text-white">Contributor Agreement</h2>
-                    <p class="text-green-100">Please review and sign the agreement to become a contributor</p>
-                </div>
+            <!-- Step 1: Book Details -->
+            <div id="step1" class="form-step active">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Book Information</h2>
                 
-                <div class="p-6">
-                    <div class="agreement-content mb-6">
-                        <h3 class="font-bold text-lg mb-3">Terms and Conditions</h3>
-                        <div class="space-y-4 text-gray-700">
-                            <p><strong>1. Content Ownership:</strong> You retain ownership of your content but grant Bantu Books Zambia a non-exclusive license to distribute and sell your books.</p>
-                            <p><strong>2. Earnings:</strong> You will earn K5.00 for each book uploaded and approved. Payments are made monthly on the 15th for the previous month's earnings.</p>
-                            <p><strong>3. Content Guidelines:</strong> All content must be original, educational, and appropriate for Zambian students. Plagiarism is strictly prohibited.</p>
-                            <p><strong>4. Quality Standards:</strong> Books must meet our quality standards including proper formatting, accurate information, and clear presentation.</p>
-                            <p><strong>5. Withdrawal:</strong> Minimum withdrawal amount is K250. Withdrawals can be requested once per month.</p>
-                            <p><strong>6. Termination:</strong> Either party may terminate this agreement with 30 days written notice. Violation of terms may result in immediate termination.</p>
-                            <p><strong>7. Liability:</strong> Bantu Books Zambia is not liable for any claims arising from your content. You agree to indemnify the platform.</p>
-                            <p class="mt-4 text-sm text-gray-500">By signing this agreement, you confirm that you have read, understood, and agree to be bound by these terms.</p>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2 font-semibold">
+                            Book Title <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="title" required 
+                               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                               placeholder="Enter the book title">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2 font-semibold">
+                            Author <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="author" required 
+                               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                               placeholder="Author name">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 dark:text-gray-300 mb-2 font-semibold">
+                                Category <span class="text-red-500">*</span>
+                            </label>
+                            <select name="category" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-green-500 dark:bg-gray-700 dark:text-white">
+                                <option value="">Select Category</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-700 dark:text-gray-300 mb-2 font-semibold">
+                                Grade Level
+                            </label>
+                            <select name="grade" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-green-500 dark:bg-gray-700 dark:text-white">
+                                <option value="">Select Grade</option>
+                                {% for grade in grades %}
+                                <option value="{{ grade.id }}">{{ grade.name }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                     
-                    <form id="agreementForm" method="post" action="{% url 'books:sign_agreement' application.id %}">
-                        {% csrf_token %}
-                        
-                        <!-- Signature Pad -->
-                        <div class="mb-6">
-                            <label class="block text-gray-700 font-semibold mb-2">Digital Signature</label>
-                            <div class="signature-pad">
-                                <canvas id="signatureCanvas" width="600" height="200" style="width: 100%; height: 200px; border: 1px solid #e5e7eb; border-radius: 0.5rem;"></canvas>
-                            </div>
-                            <div class="flex gap-2 mt-2">
-                                <button type="button" onclick="clearSignature()" class="text-sm text-gray-500 hover:text-gray-700">
-                                    <i class="fas fa-eraser mr-1"></i> Clear Signature
-                                </button>
-                                <button type="button" onclick="undoSignature()" class="text-sm text-gray-500 hover:text-gray-700">
-                                    <i class="fas fa-undo mr-1"></i> Undo
-                                </button>
-                            </div>
-                            <input type="hidden" id="signatureData" name="signature" required>
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2 font-semibold">
+                            Description
+                        </label>
+                        <textarea name="description" rows="4" 
+                                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                                  placeholder="Describe the book content..."></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 dark:text-gray-300 mb-2 font-semibold">
+                                Price (Kwacha)
+                            </label>
+                            <input type="number" name="price" step="0.01" value="0.00"
+                                   class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-green-500 dark:bg-gray-700 dark:text-white">
+                            <p class="text-xs text-gray-500 mt-1">Set to 0 for free books</p>
                         </div>
                         
-                        <div class="flex gap-3">
-                            <button type="submit" class="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition">
-                                <i class="fas fa-signature mr-2"></i> Sign Agreement
-                            </button>
-                            <button type="button" onclick="declineAgreement()" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">
-                                Decline
-                            </button>
+                        <div>
+                            <label class="block text-gray-700 dark:text-gray-300 mb-2 font-semibold">
+                                Language
+                            </label>
+                            <select name="language" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-green-500 dark:bg-gray-700 dark:text-white">
+                                <option value="en">English</option>
+                                <option value="bem">Bemba</option>
+                                <option value="nyanja">Nyanja</option>
+                                <option value="tonga">Tonga</option>
+                                <option value="lozi">Lozi</option>
+                            </select>
                         </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        
-    {% elif has_application and application.status == 'rejected' %}
-        <!-- Rejected Application -->
-        <div class="text-center py-12">
-            <div class="bg-red-50 rounded-lg p-8 max-w-2xl mx-auto">
-                <i class="fas fa-times-circle text-5xl text-red-600 mb-4"></i>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Application Status: Not Approved</h2>
-                <p class="text-gray-600 mb-4">Unfortunately, your application was not approved at this time.</p>
-                <div class="bg-white rounded-lg p-4 text-left">
-                    <p class="font-semibold">Status: <span class="text-red-600">{{ application.get_status_display }}</span></p>
-                    {% if application.admin_notes %}
-                    <p class="text-sm text-gray-500 mt-2">Reason: {{ application.admin_notes }}</p>
-                    {% endif %}
-                </div>
-                <p class="text-sm text-gray-500 mt-4">You may reapply after 30 days.</p>
-            </div>
-        </div>
-        
-    {% else %}
-        <!-- Not Applied -->
-        <div class="text-center py-12">
-            <div class="bg-gray-50 rounded-lg p-8 max-w-2xl mx-auto">
-                <i class="fas fa-hand-peace text-5xl text-green-600 mb-4"></i>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Become a Contributor</h2>
-                <p class="text-gray-600 mb-6">Share your educational content and earn money!</p>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div class="text-center p-3">
-                        <i class="fas fa-money-bill-wave text-3xl text-green-600 mb-2"></i>
-                        <p class="font-semibold">Earn Per Book</p>
-                        <p class="text-xs text-gray-500">K5 for each approved book</p>
-                    </div>
-                    <div class="text-center p-3">
-                        <i class="fas fa-chart-line text-3xl text-green-600 mb-2"></i>
-                        <p class="font-semibold">Track Earnings</p>
-                        <p class="text-xs text-gray-500">Real-time dashboard</p>
-                    </div>
-                    <div class="text-center p-3">
-                        <i class="fas fa-calendar-alt text-3xl text-green-600 mb-2"></i>
-                        <p class="font-semibold">Monthly Payouts</p>
-                        <p class="text-xs text-gray-500">Minimum K250</p>
                     </div>
                 </div>
-                <a href="{% url 'books:apply_contributor' %}" class="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition inline-block">
-                    Apply Now
-                </a>
+                
+                <div class="mt-6 flex justify-end">
+                    <button type="button" onclick="nextStep()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+                        Next: Upload Files <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
             </div>
+            
+            <!-- Step 2: Upload Files -->
+            <div id="step2" class="form-step">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Upload Files</h2>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2 font-semibold">
+                            Book Cover Image <span class="text-red-500">*</span>
+                        </label>
+                        <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-green-500 transition">
+                            <input type="file" name="cover_image" accept="image/*" required onchange="previewCover(this)" class="hidden" id="coverInput">
+                            <label for="coverInput" class="cursor-pointer">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                                <p class="text-gray-600 dark:text-gray-400">Click to upload cover image</p>
+                                <p class="text-xs text-gray-500">JPG, PNG or GIF (Max 5MB)</p>
+                            </label>
+                            <div id="coverPreview" class="mt-4 hidden">
+                                <img id="coverImage" class="preview-image mx-auto">
+                                <button type="button" onclick="clearCover()" class="text-red-500 text-sm mt-2">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2 font-semibold">
+                            PDF File <span class="text-red-500">*</span>
+                        </label>
+                        <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-green-500 transition">
+                            <input type="file" name="pdf_file" accept=".pdf" required onchange="previewPdf(this)" class="hidden" id="pdfInput">
+                            <label for="pdfInput" class="cursor-pointer">
+                                <i class="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
+                                <p class="text-gray-600 dark:text-gray-400">Click to upload PDF file</p>
+                                <p class="text-xs text-gray-500">PDF files only (Max 50MB)</p>
+                            </label>
+                            <div id="pdfPreview" class="mt-4 hidden">
+                                <p class="text-green-600"><i class="fas fa-check-circle"></i> File selected: <span id="pdfName"></span></p>
+                                <button type="button" onclick="clearPdf()" class="text-red-500 text-sm mt-2">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-between">
+                    <button type="button" onclick="prevStep()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
+                        <i class="fas fa-arrow-left mr-2"></i> Back
+                    </button>
+                    <button type="button" onclick="nextStep()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+                        Next: Preview <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Step 3: Preview & Submit -->
+            <div id="step3" class="form-step">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Preview & Submit</h2>
+                
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                    <h3 class="font-semibold text-gray-800 dark:text-white mb-2">Book Details</h3>
+                    <div id="previewDetails" class="space-y-1 text-sm text-gray-600 dark:text-gray-400"></div>
+                </div>
+                
+                <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 mb-4">
+                    <h3 class="font-semibold text-gray-800 dark:text-white mb-2">Contributor Agreement</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        By submitting this book, you confirm that:
+                    </p>
+                    <ul class="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1">
+                        <li>You own the rights to this content</li>
+                        <li>The content is original and not plagiarized</li>
+                        <li>You agree to our contributor terms</li>
+                        <li>You will earn K5.00 per approved book</li>
+                    </ul>
+                </div>
+                
+                <div class="mt-6 flex justify-between">
+                    <button type="button" onclick="prevStep()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
+                        <i class="fas fa-arrow-left mr-2"></i> Back
+                    </button>
+                    <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+                        <i class="fas fa-cloud-upload-alt mr-2"></i> Submit for Review
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Bulk Upload Section -->
+    <div class="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+            <i class="fas fa-layer-group text-blue-600"></i>
+            Bulk Upload Multiple Books
+        </h2>
+        <p class="text-gray-600 dark:text-gray-400 mb-4">Upload multiple books at once using our CSV template</p>
+        <div class="flex gap-3 flex-wrap">
+            <a href="{% url 'downloads:download_bulk_template' %}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+                <i class="fas fa-download mr-2"></i> Download Template
+            </a>
+            <a href="{% url 'downloads:bulk_upload' %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                <i class="fas fa-upload mr-2"></i> Go to Bulk Upload
+            </a>
         </div>
-    {% endif %}
+    </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 <script>
-    let signaturePad = null;
+    let currentStep = 1;
+    const totalSteps = 3;
     
-    function initSignaturePad() {
-        const canvas = document.getElementById('signatureCanvas');
-        if (!canvas) return;
-        
-        signaturePad = new SignaturePad(canvas, {
-            backgroundColor: 'rgb(255, 255, 255)',
-            penColor: 'rgb(5, 150, 105)',
-            velocityFilterWeight: 0.7,
-            minWidth: 1,
-            maxWidth: 3,
-            throttle: 16
-        });
-        
-        function resizeCanvas() {
-            const ratio = Math.max(window.devicePixelRatio || 1, 1);
-            const container = canvas.parentElement;
-            const width = container.clientWidth;
-            const height = 200;
+    function updateStepIndicator() {
+        for (let i = 1; i <= totalSteps; i++) {
+            const step = document.getElementById(`step${i}Indicator`);
+            const formStep = document.getElementById(`step${i}`);
             
-            canvas.width = width * ratio;
-            canvas.height = height * ratio;
-            canvas.style.width = width + 'px';
-            canvas.style.height = height + 'px';
-            
-            const ctx = canvas.getContext('2d');
-            ctx.scale(ratio, ratio);
-            
-            if (signaturePad) {
-                signaturePad.clear();
-            }
-        }
-        
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-    }
-    
-    function clearSignature() {
-        if (signaturePad) {
-            signaturePad.clear();
-            document.getElementById('signatureData').value = '';
-        }
-    }
-    
-    function undoSignature() {
-        if (signaturePad && !signaturePad.isEmpty()) {
-            const data = signaturePad.toData();
-            if (data && data.length > 0) {
-                data.pop();
-                signaturePad.fromData(data);
+            if (i < currentStep) {
+                step.classList.add('completed');
+                step.classList.remove('active');
+            } else if (i === currentStep) {
+                step.classList.add('active');
+                step.classList.remove('completed');
+                formStep.classList.add('active');
+            } else {
+                step.classList.remove('active', 'completed');
+                formStep.classList.remove('active');
             }
         }
     }
     
-    function declineAgreement() {
-        if (confirm('Are you sure you want to decline the agreement? You will not be able to become a contributor.')) {
-            window.location.href = "{% url 'books:contributor_dashboard' %}";
-        }
-    }
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        initSignaturePad();
-        
-        const form = document.getElementById('agreementForm');
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                if (signaturePad && !signaturePad.isEmpty()) {
-                    const signatureData = signaturePad.toDataURL();
-                    document.getElementById('signatureData').value = signatureData;
-                } else if (signaturePad && signaturePad.isEmpty()) {
-                    e.preventDefault();
-                    alert('Please provide your signature to sign the agreement.');
+    function nextStep() {
+        if (validateStep(currentStep)) {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateStepIndicator();
+                
+                if (currentStep === 3) {
+                    updatePreview();
                 }
-            });
+            }
+        }
+    }
+    
+    function prevStep() {
+        if (currentStep > 1) {
+            currentStep--;
+            updateStepIndicator();
+        }
+    }
+    
+    function validateStep(step) {
+        if (step === 1) {
+            const title = document.querySelector('input[name="title"]').value;
+            const author = document.querySelector('input[name="author"]').value;
+            const category = document.querySelector('select[name="category"]').value;
+            
+            if (!title) {
+                alert('Please enter the book title');
+                return false;
+            }
+            if (!author) {
+                alert('Please enter the author name');
+                return false;
+            }
+            if (!category) {
+                alert('Please select a category');
+                return false;
+            }
+        }
+        
+        if (step === 2) {
+            const cover = document.querySelector('input[name="cover_image"]').files[0];
+            const pdf = document.querySelector('input[name="pdf_file"]').files[0];
+            
+            if (!cover) {
+                alert('Please upload a cover image');
+                return false;
+            }
+            if (!pdf) {
+                alert('Please upload a PDF file');
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    function updatePreview() {
+        const title = document.querySelector('input[name="title"]').value;
+        const author = document.querySelector('input[name="author"]').value;
+        const category = document.querySelector('select[name="category"] option:checked')?.text || '';
+        const grade = document.querySelector('select[name="grade"] option:checked')?.text || 'Not specified';
+        const price = document.querySelector('input[name="price"]').value;
+        const language = document.querySelector('select[name="language"] option:checked')?.text || 'English';
+        
+        const previewHtml = `
+            <p><strong>Title:</strong> ${escapeHtml(title)}</p>
+            <p><strong>Author:</strong> ${escapeHtml(author)}</p>
+            <p><strong>Category:</strong> ${escapeHtml(category)}</p>
+            <p><strong>Grade Level:</strong> ${escapeHtml(grade)}</p>
+            <p><strong>Price:</strong> K${parseFloat(price).toFixed(2)}</p>
+            <p><strong>Language:</strong> ${escapeHtml(language)}</p>
+        `;
+        
+        document.getElementById('previewDetails').innerHTML = previewHtml;
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function previewCover(input) {
+        const preview = document.getElementById('coverPreview');
+        const image = document.getElementById('coverImage');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                image.src = e.target.result;
+                preview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    
+    function clearCover() {
+        document.getElementById('coverInput').value = '';
+        document.getElementById('coverPreview').classList.add('hidden');
+        document.getElementById('coverImage').src = '';
+    }
+    
+    function previewPdf(input) {
+        const preview = document.getElementById('pdfPreview');
+        const pdfName = document.getElementById('pdfName');
+        
+        if (input.files && input.files[0]) {
+            pdfName.textContent = input.files[0].name;
+            preview.classList.remove('hidden');
+        }
+    }
+    
+    function clearPdf() {
+        document.getElementById('pdfInput').value = '';
+        document.getElementById('pdfPreview').classList.add('hidden');
+    }
+    
+    // Form submission
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        if (!validateStep(1) || !validateStep(2)) {
+            e.preventDefault();
+            alert('Please complete all required fields');
         }
     });
 </script>
