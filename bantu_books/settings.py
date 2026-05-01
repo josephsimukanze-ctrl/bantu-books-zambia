@@ -84,10 +84,20 @@ TEMPLATES = [
     },
 ]
 
+# PostgreSQL Database Configuration
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
@@ -134,7 +144,6 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DAILY_FREE_DOWNLOADS_GUEST = 5
 DAILY_FREE_DOWNLOADS_BASIC = 20
 
-
 # In settings.py, if using django-allauth or custom middleware
 LOGIN_EXEMPT_URLS = (
     r'^/accounts/biometric/status/',
@@ -143,16 +152,5 @@ LOGIN_EXEMPT_URLS = (
     r'^/accounts/biometric/verify-login/',
 )
 
-# settings.py
-import os
-from pathlib import Path
-
-# Add at the bottom of settings.py
 # Free Gemini AI Configuration
-GEMINI_API_KEY = 'AIzaSyBqYMazMTWLmmrc8nkRu160PAV0FDlbPSo'
-
-# settings.py
-from dotenv import load_dotenv
-load_dotenv()
-
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyBqYMazMTWLmmrc8nkRu160PAV0FDlbPSo')
