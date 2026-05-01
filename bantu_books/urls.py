@@ -34,6 +34,6 @@ if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
-# Custom error handlers (optional)
-handler404 = 'core.views.handler404'
-handler500 = 'core.views.handler500'
+# Custom error handlers (optional) - COMMENT THESE OUT FOR NOW
+# handler404 = 'core.views.handler404'
+# handler500 = 'core.views.handler500'
