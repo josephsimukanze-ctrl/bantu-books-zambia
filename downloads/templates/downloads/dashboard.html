@@ -1,0 +1,526 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Downloads Dashboard - Bantu Books Zambia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s;
+    }
+    
+    .stat-card:hover::before {
+        left: 100%;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+    
+    .quick-action-card {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .quick-action-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .quick-action-card::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #fff, transparent);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+    
+    .quick-action-card:hover::after {
+        transform: scaleX(1);
+    }
+    
+    .admin-link-card {
+        transition: all 0.3s ease;
+    }
+    
+    .admin-link-card:hover {
+        transform: translateX(5px);
+        background-color: #f0fdf4;
+    }
+    
+    .table-row-hover {
+        transition: all 0.2s ease;
+    }
+    
+    .table-row-hover:hover {
+        background-color: #f9fafb;
+        transform: translateX(2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Downloads Dashboard</h1>
+        <p class="text-gray-600">Manage and monitor all download activities</p>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="stat-card bg-white rounded-xl shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Total Downloads</p>
+                    <p class="text-3xl font-bold text-green-600">{{ total_downloads }}</p>
+                </div>
+                <div class="bg-green-100 rounded-full p-3">
+                    <i class="fas fa-download text-green-600 text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-2">
+                <div class="h-1 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-green-500 rounded-full" style="width: {{ downloads_percentage|default:0 }}%"></div>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">
+                    <span class="trend-up"><i class="fas fa-arrow-up"></i> {{ downloads_percentage|default:0 }}%</span> from last month
+                </p>
+            </div>
+        </div>
+        
+        <div class="stat-card bg-white rounded-xl shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Total Views</p>
+                    <p class="text-3xl font-bold text-blue-600">{{ total_views }}</p>
+                </div>
+                <div class="bg-blue-100 rounded-full p-3">
+                    <i class="fas fa-eye text-blue-600 text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-2">
+                <div class="h-1 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-blue-500 rounded-full" style="width: 75%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card bg-white rounded-xl shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Online Reads</p>
+                    <p class="text-3xl font-bold text-purple-600">{{ total_reads }}</p>
+                </div>
+                <div class="bg-purple-100 rounded-full p-3">
+                    <i class="fas fa-book-reader text-purple-600 text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-2">
+                <div class="h-1 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-purple-500 rounded-full" style="width: 60%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card bg-white rounded-xl shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Active Users</p>
+                    <p class="text-3xl font-bold text-orange-600">{{ active_users }}</p>
+                </div>
+                <div class="bg-orange-100 rounded-full p-3">
+                    <i class="fas fa-users text-orange-600 text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-2">
+                <div class="h-1 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-orange-500 rounded-full" style="width: 85%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-chart-line text-green-600 mr-2"></i> Downloads Overview (Last 12 Months)
+            </h3>
+            <div class="chart-container">
+                <canvas id="downloadsChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-chart-pie text-green-600 mr-2"></i> Downloads by Category
+            </h3>
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Daily Trends Chart -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition">
+        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-calendar-day text-green-600 mr-2"></i> Daily Downloads (Last 7 Days)
+        </h3>
+        <div class="chart-container" style="height: 250px;">
+            <canvas id="dailyChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <a href="{% url 'downloads:upload_book' %}" class="quick-action-card bg-gradient-to-r from-green-600 to-green-700 text-white p-4 rounded-xl text-center hover:shadow-xl transition">
+            <i class="fas fa-upload text-3xl mb-2 block"></i>
+            <span class="font-semibold">Upload New Book</span>
+            <p class="text-xs opacity-75 mt-1">Add books to library</p>
+        </a>
+        <a href="{% url 'admin:downloads_bookdownload_changelist' %}" class="quick-action-card bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-xl text-center hover:shadow-xl transition">
+            <i class="fas fa-download text-3xl mb-2 block"></i>
+            <span class="font-semibold">View All Downloads</span>
+            <p class="text-xs opacity-75 mt-1">Monitor download history</p>
+        </a>
+        <a href="{% url 'books:staff_manage_requests' %}" class="quick-action-card bg-gradient-to-r from-yellow-600 to-yellow-700 text-white p-4 rounded-xl text-center hover:shadow-xl transition">
+            <i class="fas fa-clipboard-list text-3xl mb-2 block"></i>
+            <span class="font-semibold">Manage Requests</span>
+            <p class="text-xs opacity-75 mt-1">Handle book requests</p>
+        </a>
+        <a href="{% url 'admin:downloads_bookreadonline_changelist' %}" class="quick-action-card bg-gradient-to-r from-purple-600 to-purple-700 text-white p-4 rounded-xl text-center hover:shadow-xl transition">
+            <i class="fas fa-book-reader text-3xl mb-2 block"></i>
+            <span class="font-semibold">Reading Sessions</span>
+            <p class="text-xs opacity-75 mt-1">Track reading activity</p>
+        </a>
+    </div>
+    
+    <!-- Recent Downloads Table -->
+    <div class="bg-white rounded-xl shadow-md mb-8">
+        <div class="border-b px-6 py-4">
+            <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                <i class="fas fa-history text-green-600 mr-2"></i> Recent Downloads
+            </h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Book</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for download in recent_downloads %}
+                    <tr class="table-row-hover">
+                        <td class="px-6 py-4">
+                            <a href="{% url 'books:book_detail' download.book.slug %}" class="text-green-600 hover:underline font-medium">
+                                {{ download.book.title }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4">{{ download.user.username|default:"<span class='text-gray-400'>Anonymous</span>" }}</td>
+                        <td class="px-6 py-4 text-gray-500">{{ download.downloaded_at|date:"M d, Y H:i" }}</td>
+                        <td class="px-6 py-4">
+                            {% if download.is_premium %}
+                                <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">Premium</span>
+                            {% else %}
+                                <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-semibold">Basic</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="px-6 py-8 text-center text-gray-500">No downloads yet</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Popular Books Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Most Downloaded Books -->
+        <div class="bg-white rounded-xl shadow-md">
+            <div class="border-b px-6 py-4">
+                <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-fire text-green-600 mr-2"></i> Most Downloaded Books
+                </h2>
+            </div>
+            <div class="p-6">
+                {% for book in popular_books %}
+                <div class="flex items-center justify-between mb-4 pb-4 border-b last:border-0 hover:bg-gray-50 -mx-2 px-2 py-2 rounded-lg transition">
+                    <div class="flex-1">
+                        <a href="{% url 'books:book_detail' book.slug %}" class="font-semibold text-gray-800 hover:text-green-600">
+                            {{ book.title }}
+                        </a>
+                        <p class="text-sm text-gray-500">{{ book.author }}</p>
+                        {% if book.engagement %}
+                        <div class="mt-1">
+                            <span class="text-xs text-green-600">
+                                <i class="fas fa-chart-line"></i> {{ book.engagement }}% engagement
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="text-right">
+                        <span class="text-2xl font-bold text-green-600">{{ book.downloads_count }}</span>
+                        <p class="text-xs text-gray-500">downloads</p>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-gray-500 text-center py-4">No data available</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Most Viewed Books -->
+        <div class="bg-white rounded-xl shadow-md">
+            <div class="border-b px-6 py-4">
+                <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-eye text-blue-600 mr-2"></i> Most Viewed Books
+                </h2>
+            </div>
+            <div class="p-6">
+                {% for book in most_viewed_books %}
+                <div class="flex items-center justify-between mb-4 pb-4 border-b last:border-0 hover:bg-gray-50 -mx-2 px-2 py-2 rounded-lg transition">
+                    <div class="flex-1">
+                        <a href="{% url 'books:book_detail' book.slug %}" class="font-semibold text-gray-800 hover:text-green-600">
+                            {{ book.title }}
+                        </a>
+                        <p class="text-sm text-gray-500">{{ book.author }}</p>
+                        {% if book.conversion %}
+                        <div class="mt-1">
+                            <span class="text-xs text-blue-600">
+                                <i class="fas fa-percent"></i> {{ book.conversion }}% conversion
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="text-right">
+                        <span class="text-2xl font-bold text-blue-600">{{ book.views_count }}</span>
+                        <p class="text-xs text-gray-500">views</p>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-gray-500 text-center py-4">No data available</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Admin Quick Links -->
+    <div class="bg-white rounded-xl shadow-md">
+        <div class="border-b px-6 py-4">
+            <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                <i class="fas fa-cog text-green-600 mr-2"></i> Admin Quick Links
+            </h2>
+            <p class="text-sm text-gray-500 mt-1">Quick access to manage your library</p>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <a href="{% url 'admin:books_book_changelist' %}" class="admin-link-card flex items-center p-4 bg-gray-50 rounded-xl hover:bg-green-50 transition group">
+                    <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mr-4 group-hover:bg-green-200 transition">
+                        <i class="fas fa-book text-green-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-800">Manage Books</p>
+                        <p class="text-xs text-gray-500">Add, edit, or delete books</p>
+                    </div>
+                    <i class="fas fa-chevron-right ml-auto text-gray-400 group-hover:text-green-600 group-hover:translate-x-1 transition"></i>
+                </a>
+                
+                <a href="{% url 'admin:downloads_userdownloadlimit_changelist' %}" class="admin-link-card flex items-center p-4 bg-gray-50 rounded-xl hover:bg-green-50 transition group">
+                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-4 group-hover:bg-blue-200 transition">
+                        <i class="fas fa-users text-blue-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-800">User Limits</p>
+                        <p class="text-xs text-gray-500">Manage download limits</p>
+                    </div>
+                    <i class="fas fa-chevron-right ml-auto text-gray-400 group-hover:text-green-600 group-hover:translate-x-1 transition"></i>
+                </a>
+                
+                <a href="{% url 'admin:books_category_changelist' %}" class="admin-link-card flex items-center p-4 bg-gray-50 rounded-xl hover:bg-green-50 transition group">
+                    <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mr-4 group-hover:bg-purple-200 transition">
+                        <i class="fas fa-folder text-purple-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-800">Categories</p>
+                        <p class="text-xs text-gray-500">Manage book categories</p>
+                    </div>
+                    <i class="fas fa-chevron-right ml-auto text-gray-400 group-hover:text-green-600 group-hover:translate-x-1 transition"></i>
+                </a>
+                
+                <a href="{% url 'admin:books_gradelevel_changelist' %}" class="admin-link-card flex items-center p-4 bg-gray-50 rounded-xl hover:bg-green-50 transition group">
+                    <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mr-4 group-hover:bg-yellow-200 transition">
+                        <i class="fas fa-graduation-cap text-yellow-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-800">Grade Levels</p>
+                        <p class="text-xs text-gray-500">Manage grade filters</p>
+                    </div>
+                    <i class="fas fa-chevron-right ml-auto text-gray-400 group-hover:text-green-600 group-hover:translate-x-1 transition"></i>
+                </a>
+                
+                <a href="{% url 'admin:books_language_changelist' %}" class="admin-link-card flex items-center p-4 bg-gray-50 rounded-xl hover:bg-green-50 transition group">
+                    <div class="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center mr-4 group-hover:bg-pink-200 transition">
+                        <i class="fas fa-language text-pink-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-800">Languages</p>
+                        <p class="text-xs text-gray-500">Manage language filters</p>
+                    </div>
+                    <i class="fas fa-chevron-right ml-auto text-gray-400 group-hover:text-green-600 group-hover:translate-x-1 transition"></i>
+                </a>
+                
+                <a href="{% url 'downloads:upload_book' %}" class="admin-link-card flex items-center p-4 bg-gray-50 rounded-xl hover:bg-green-50 transition group">
+                    <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mr-4 group-hover:bg-orange-200 transition">
+                        <i class="fas fa-upload text-orange-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-800">Upload Book</p>
+                        <p class="text-xs text-gray-500">Add new books to library</p>
+                    </div>
+                    <i class="fas fa-chevron-right ml-auto text-gray-400 group-hover:text-green-600 group-hover:translate-x-1 transition"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Monthly Downloads Chart
+        const monthlyCtx = document.getElementById('downloadsChart');
+        if (monthlyCtx) {
+            new Chart(monthlyCtx, {
+                type: 'line',
+                data: {
+                    labels: {{ monthly_labels|safe }},
+                    datasets: [{
+                        label: 'Downloads',
+                        data: {{ monthly_downloads|safe }},
+                        borderColor: '#059669',
+                        backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#059669',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: { backgroundColor: '#1f2937' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#e5e7eb' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+        
+        // Category Chart
+        const categoryCtx = document.getElementById('categoryChart');
+        if (categoryCtx && {{ category_data|length }} > 0) {
+            new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: {{ category_labels|safe }},
+                    datasets: [{
+                        data: {{ category_data|safe }},
+                        backgroundColor: {{ category_colors|safe }},
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+        }
+        
+        // Daily Chart
+        const dailyCtx = document.getElementById('dailyChart');
+        if (dailyCtx) {
+            new Chart(dailyCtx, {
+                type: 'bar',
+                data: {
+                    labels: {{ daily_labels|safe }},
+                    datasets: [{
+                        label: 'Downloads',
+                        data: {{ daily_downloads|safe }},
+                        backgroundColor: '#059669',
+                        borderRadius: 8,
+                        barPercentage: 0.7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'top' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#e5e7eb' } }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

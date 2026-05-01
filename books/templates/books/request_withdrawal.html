@@ -1,0 +1,412 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Request Withdrawal - Bantu Books Zambia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .balance-card {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        transition: all 0.3s ease;
+    }
+    
+    .info-card {
+        transition: all 0.2s ease;
+    }
+    
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-input:focus {
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+    }
+    
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .amount-badge {
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .amount-badge:hover {
+        background: #10b981;
+        color: white;
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Request Withdrawal</h1>
+            <p class="text-gray-600">Withdraw your earnings to your mobile money or bank account</p>
+        </div>
+        
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Header Gradient -->
+            <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-4">
+                <h2 class="text-xl font-bold text-white">Withdrawal Details</h2>
+            </div>
+            
+            <div class="p-6">
+                <!-- Balance Info Card -->
+                <div class="balance-card rounded-xl p-5 mb-6 text-white">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-green-100">Available Balance:</span>
+                        <span class="text-3xl font-bold">K{{ contributor.available_balance|floatformat:2|intcomma }}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-green-500">
+                        <div>
+                            <p class="text-green-100 text-sm">Minimum Withdrawal</p>
+                            <p class="font-semibold">K250.00</p>
+                        </div>
+                        <div>
+                            <p class="text-green-100 text-sm">Withdrawal Limit</p>
+                            <p class="font-semibold">Once per month</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Amount Buttons -->
+                <div class="mb-5">
+                    <label class="block text-gray-700 font-semibold mb-2">Quick Select Amount</label>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="setAmount(250)" class="amount-badge bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-green-600 hover:text-white transition">K250</button>
+                        <button type="button" onclick="setAmount(500)" class="amount-badge bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-green-600 hover:text-white transition">K500</button>
+                        <button type="button" onclick="setAmount(1000)" class="amount-badge bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-green-600 hover:text-white transition">K1,000</button>
+                        <button type="button" onclick="setAmount(2000)" class="amount-badge bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-green-600 hover:text-white transition">K2,000</button>
+                        <button type="button" onclick="setMaxAmount()" class="amount-badge bg-green-100 text-green-700 px-4 py-2 rounded-lg text-sm hover:bg-green-600 hover:text-white transition">Max (K{{ contributor.available_balance|floatformat:0 }})</button>
+                    </div>
+                </div>
+                
+                <form method="post" id="withdrawalForm">
+                    {% csrf_token %}
+                    
+                    <!-- Amount -->
+                    <div class="mb-5">
+                        <label class="block text-gray-700 font-semibold mb-2">Amount to Withdraw *</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-gray-500">K</span>
+                            <input type="number" name="amount" id="amountInput" step="1" min="250" max="{{ contributor.available_balance }}" required
+                                   class="form-input w-full pl-8 pr-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                                   placeholder="250">
+                        </div>
+                        <div id="amountError" class="text-xs text-red-500 mt-1 hidden"></div>
+                        <div class="text-xs text-gray-500 mt-1">Minimum K250, Maximum K{{ contributor.available_balance|floatformat:0 }}</div>
+                    </div>
+                    
+                    <!-- Payment Method -->
+                    <div class="mb-5">
+                        <label class="block text-gray-700 font-semibold mb-2">Payment Method *</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="payment-method-option flex items-center p-3 border rounded-lg cursor-pointer hover:bg-green-50 transition" data-method="airtel">
+                                <input type="radio" name="payment_method" value="airtel" class="mr-3" required>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Airtel_logo.svg/60px-Airtel_logo.svg.png" alt="Airtel" class="h-6">
+                                        <span class="font-semibold">Airtel Money</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500">Pay using Airtel Money</p>
+                                </div>
+                            </label>
+                            <label class="payment-method-option flex items-center p-3 border rounded-lg cursor-pointer hover:bg-green-50 transition" data-method="mtn">
+                                <input type="radio" name="payment_method" value="mtn" class="mr-3">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/MTN_Group_Logo.svg/60px-MTN_Group_Logo.svg.png" alt="MTN" class="h-6">
+                                        <span class="font-semibold">MTN Mobile Money</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500">Pay using MTN Mobile Money</p>
+                                </div>
+                            </label>
+                            <label class="payment-method-option flex items-center p-3 border rounded-lg cursor-pointer hover:bg-green-50 transition" data-method="zamtel">
+                                <input type="radio" name="payment_method" value="zamtel" class="mr-3">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <img src="https://play-lh.googleusercontent.com/GCdQcA72bQ0TO4ci9hZ5FRT9Yr1h3F2juC0aHTJ6Z9AVnQeW4LS4T5PkM3sAqL8jvQg" alt="Zamtel" class="h-6">
+                                        <span class="font-semibold">Zamtel Kwacha</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500">Pay using Zamtel Kwacha</p>
+                                </div>
+                            </label>
+                            <label class="payment-method-option flex items-center p-3 border rounded-lg cursor-pointer hover:bg-green-50 transition" data-method="bank">
+                                <input type="radio" name="payment_method" value="bank" class="mr-3">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-university text-blue-600 text-xl"></i>
+                                        <span class="font-semibold">Bank Transfer</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500">Direct bank transfer</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Details (dynamic) -->
+                    <div class="mb-5" id="paymentDetailsContainer">
+                        <label class="block text-gray-700 font-semibold mb-2" id="detailsLabel">Phone Number *</label>
+                        <input type="text" name="payment_details" id="paymentDetails" required
+                               class="form-input w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                               placeholder="Enter phone number (e.g., 0977123456)">
+                        <p class="text-xs text-gray-500 mt-1" id="detailsHint">Enter your mobile money registered number</p>
+                        <div id="paymentError" class="text-xs text-red-500 mt-1 hidden"></div>
+                    </div>
+                    
+                    <!-- Summary Card -->
+                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                        <h3 class="font-semibold text-gray-800 mb-2">Withdrawal Summary</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Amount to Withdraw:</span>
+                                <span id="summaryAmount" class="font-semibold text-green-600">K0.00</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Remaining Balance:</span>
+                                <span id="summaryRemaining" class="font-semibold">{{ contributor.available_balance|floatformat:2 }}</span>
+                            </div>
+                            <div class="flex justify-between pt-2 border-t">
+                                <span class="text-gray-600">Processing Time:</span>
+                                <span class="text-gray-600">3-5 business days</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Important Information -->
+                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6 rounded-r-lg">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-triangle text-yellow-600 mr-3 mt-0.5"></i>
+                            <div class="text-sm text-yellow-700">
+                                <p class="font-semibold mb-1">Important Information:</p>
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>Withdrawals are processed within 3-5 business days</li>
+                                    <li>You can only withdraw once per month</li>
+                                    <li>Ensure your payment details are correct</li>
+                                    <li>Withdrawals cannot be cancelled once processed</li>
+                                    <li>Minimum withdrawal amount is K250</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4">
+                        <button type="submit" id="submitBtn" class="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 rounded-xl hover:from-green-700 hover:to-emerald-700 transition transform hover:scale-105 shadow-md">
+                            <i class="fas fa-paper-plane mr-2"></i> Request Withdrawal
+                        </button>
+                        <a href="{% url 'books:contributor_dashboard' %}" class="flex-1 bg-gray-200 text-gray-700 font-bold py-3 rounded-xl text-center hover:bg-gray-300 transition">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div id="loadingModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 text-center">
+        <div class="loading-spinner mx-auto mb-4" style="width: 40px; height: 40px;"></div>
+        <p class="text-gray-700 font-semibold">Processing your withdrawal request...</p>
+        <p class="text-sm text-gray-500 mt-2">Please wait while we submit your request</p>
+    </div>
+</div>
+
+<script>
+    const paymentMethodRadios = document.querySelectorAll('input[name="payment_method"]');
+    const detailsLabel = document.getElementById('detailsLabel');
+    const paymentDetails = document.getElementById('paymentDetails');
+    const detailsHint = document.getElementById('detailsHint');
+    const amountInput = document.getElementById('amountInput');
+    const summaryAmount = document.getElementById('summaryAmount');
+    const summaryRemaining = document.getElementById('summaryRemaining');
+    const submitBtn = document.getElementById('submitBtn');
+    const form = document.getElementById('withdrawalForm');
+    const amountError = document.getElementById('amountError');
+    const paymentError = document.getElementById('paymentError');
+    const loadingModal = document.getElementById('loadingModal');
+    
+    let maxBalance = {{ contributor.available_balance|default:0 }};
+    
+    // Update summary when amount changes
+    function updateSummary() {
+        let amount = parseFloat(amountInput.value) || 0;
+        let remaining = maxBalance - amount;
+        
+        summaryAmount.textContent = `K${amount.toFixed(2)}`;
+        summaryRemaining.textContent = `K${remaining.toFixed(2)}`;
+        
+        // Validate amount
+        if (amount > 0) {
+            if (amount < 250) {
+                amountError.textContent = 'Minimum withdrawal amount is K250';
+                amountError.classList.remove('hidden');
+                submitBtn.disabled = true;
+                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else if (amount > maxBalance) {
+                amountError.textContent = 'Amount exceeds your available balance';
+                amountError.classList.remove('hidden');
+                submitBtn.disabled = true;
+                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                amountError.classList.add('hidden');
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        } else {
+            amountError.classList.add('hidden');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    }
+    
+    function setAmount(amount) {
+        amountInput.value = amount;
+        updateSummary();
+        // Trigger validation
+        amountInput.dispatchEvent(new Event('input'));
+    }
+    
+    function setMaxAmount() {
+        amountInput.value = maxBalance;
+        updateSummary();
+        amountInput.dispatchEvent(new Event('input'));
+    }
+    
+    // Payment method change handler
+    function updatePaymentDetails() {
+        const selectedMethod = document.querySelector('input[name="payment_method"]:checked');
+        if (!selectedMethod) return;
+        
+        const method = selectedMethod.value;
+        switch(method) {
+            case 'airtel':
+                detailsLabel.textContent = 'Airtel Money Number *';
+                paymentDetails.placeholder = 'Enter Airtel Money number (e.g., 0977123456)';
+                detailsHint.textContent = 'Enter your Airtel Money registered number (10 digits)';
+                paymentDetails.pattern = '[0-9]{10}';
+                break;
+            case 'mtn':
+                detailsLabel.textContent = 'MTN Mobile Money Number *';
+                paymentDetails.placeholder = 'Enter MTN number (e.g., 0977123456)';
+                detailsHint.textContent = 'Enter your MTN Mobile Money registered number (10 digits)';
+                paymentDetails.pattern = '[0-9]{10}';
+                break;
+            case 'zamtel':
+                detailsLabel.textContent = 'Zamtel Kwacha Number *';
+                paymentDetails.placeholder = 'Enter Zamtel number (e.g., 0955123456)';
+                detailsHint.textContent = 'Enter your Zamtel Kwacha registered number (10 digits)';
+                paymentDetails.pattern = '[0-9]{10}';
+                break;
+            case 'bank':
+                detailsLabel.textContent = 'Bank Account Details *';
+                paymentDetails.placeholder = 'e.g., ZANACO, John Doe, 1234567890';
+                detailsHint.textContent = 'Format: Bank Name, Account Name, Account Number';
+                paymentDetails.pattern = null;
+                break;
+        }
+        
+        // Clear payment error
+        paymentError.classList.add('hidden');
+    }
+    
+    // Form validation
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Validate amount
+        const amount = parseFloat(amountInput.value);
+        if (isNaN(amount) || amount < 250) {
+            amountError.textContent = 'Please enter a valid amount (minimum K250)';
+            amountError.classList.remove('hidden');
+            isValid = false;
+        } else if (amount > maxBalance) {
+            amountError.textContent = 'Amount exceeds your available balance';
+            amountError.classList.remove('hidden');
+            isValid = false;
+        }
+        
+        // Validate payment method
+        const selectedMethod = document.querySelector('input[name="payment_method"]:checked');
+        if (!selectedMethod) {
+            paymentError.textContent = 'Please select a payment method';
+            paymentError.classList.remove('hidden');
+            isValid = false;
+        }
+        
+        // Validate payment details
+        if (!paymentDetails.value.trim()) {
+            paymentError.textContent = 'Please enter your payment details';
+            paymentError.classList.remove('hidden');
+            isValid = false;
+        } else {
+            const method = selectedMethod ? selectedMethod.value : '';
+            if (['airtel', 'mtn', 'zamtel'].includes(method)) {
+                const phoneRegex = /^[0-9]{10}$/;
+                if (!phoneRegex.test(paymentDetails.value.replace(/\D/g, ''))) {
+                    paymentError.textContent = 'Please enter a valid 10-digit phone number';
+                    paymentError.classList.remove('hidden');
+                    isValid = false;
+                }
+            }
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            // Scroll to first error
+            const firstError = document.querySelector('.text-red-500:not(.hidden)');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        } else {
+            // Show loading modal
+            loadingModal.classList.remove('hidden');
+            loadingModal.classList.add('flex');
+        }
+    });
+    
+    // Input event listeners
+    amountInput.addEventListener('input', updateSummary);
+    
+    paymentMethodRadios.forEach(radio => {
+        radio.addEventListener('change', updatePaymentDetails);
+    });
+    
+    // Initialize
+    updateSummary();
+    updatePaymentDetails();
+    
+    // Phone number formatting
+    paymentDetails.addEventListener('input', function(e) {
+        let value = this.value.replace(/\D/g, '');
+        if (value.length > 10) value = value.slice(0, 10);
+        this.value = value;
+    });
+    
+    // Payment method option hover effect
+    document.querySelectorAll('.payment-method-option').forEach(option => {
+        option.addEventListener('click', function() {
+            const radio = this.querySelector('input[type="radio"]');
+            if (radio) radio.checked = true;
+            updatePaymentDetails();
+        });
+    });
+</script>
+{% endblock %}

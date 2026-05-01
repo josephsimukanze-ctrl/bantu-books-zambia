@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Request a Book - Bantu Books Zambia{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Request a Book</h1>
+            <p class="text-gray-600">Can't find the book you're looking for? Request it and we'll try to add it!</p>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-semibold mb-2">Book Title *</label>
+                        <input type="text" name="title" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-semibold mb-2">Author</label>
+                        <input type="text" name="author" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+                        <p class="text-xs text-gray-500 mt-1">If you know the author</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-semibold mb-2">ISBN</label>
+                        <input type="text" name="isbn" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+                        <p class="text-xs text-gray-500 mt-1">ISBN-10 or ISBN-13 if available</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-semibold mb-2">Category</label>
+                        <select name="category" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+                            <option value="">Select a category (optional)</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-semibold mb-2">Email for Notification *</label>
+                        <input type="email" name="email" value="{{ user.email }}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+                        <p class="text-xs text-gray-500 mt-1">We'll notify you at this email</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-semibold mb-2">Priority</label>
+                        <select name="priority" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+                            <option value="low">Low - I can wait</option>
+                            <option value="medium" selected>Medium - Would be nice to have</option>
+                            <option value="high">High - I need this soon</option>
+                            <option value="urgent">Urgent - Need immediately</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4 md:col-span-2">
+                        <label class="block text-gray-700 font-semibold mb-2">Why do you need this book?</label>
+                        <textarea name="reason" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500" placeholder="e.g., For my Grade 12 exams, University research, Teaching materials..."></textarea>
+                    </div>
+                    
+                    <div class="mb-4 md:col-span-2">
+                        <label class="block text-gray-700 font-semibold mb-2">Additional Information</label>
+                        <textarea name="description" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500" placeholder="Any other details about the book..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <button type="submit" class="flex-1 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+                        <i class="fas fa-paper-plane mr-2"></i> Submit Request
+                    </button>
+                    <a href="{% url 'books:book_list' %}" class="flex-1 bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition text-center">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+        
+        <div class="mt-8 bg-blue-50 rounded-lg p-4">
+            <div class="flex items-start gap-3">
+                <i class="fas fa-info-circle text-blue-500 text-xl"></i>
+                <div>
+                    <h4 class="font-semibold text-gray-800">How it works:</h4>
+                    <ol class="text-sm text-gray-600 mt-2 space-y-1 list-decimal list-inside">
+                        <li>Fill out the form with the book details</li>
+                        <li>We review your request and search for the book</li>
+                        <li>Once available, we'll notify you via email</li>
+                        <li>The book will appear in your downloads</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,459 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load custom_filters %}
+{% block title %}Earnings Dashboard - Bantu Books Zambia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: all 0.3s ease;
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    }
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .status-approved { background: #dcfce7; color: #059669; }
+    .status-pending { background: #fef3c7; color: #d97706; }
+    .status-rejected { background: #fee2e2; color: #dc2626; }
+    
+    .tab-btn {
+        transition: all 0.2s ease;
+    }
+    .tab-btn.active {
+        background: #059669;
+        color: white;
+    }
+    .tab-content {
+        display: none;
+    }
+    .tab-content.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .earning-row {
+        transition: all 0.2s ease;
+    }
+    .earning-row:hover {
+        background-color: #f9fafb;
+        transform: translateX(4px);
+    }
+    
+    /* Withdrawal Button Styles */
+    .withdraw-btn {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .withdraw-btn:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s ease;
+    }
+    .withdraw-btn:hover:before {
+        left: 100%;
+    }
+    .withdraw-btn.disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        filter: grayscale(0.2);
+    }
+    .withdraw-progress {
+        transition: width 0.5s ease;
+    }
+    
+    .balance-card {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2c4a6e 100%);
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+    .balance-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .progress-ring {
+        transition: stroke-dashoffset 0.5s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header with Withdrawal Button -->
+        <div class="mb-8 flex flex-wrap justify-between items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Earnings Dashboard</h1>
+                <p class="text-gray-600">Track your earnings and monitor your book performance</p>
+            </div>
+            {% if available_balance >= 250 %}
+                <a href="{% url 'books:request_withdrawal' %}" 
+                   class="withdraw-btn bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition transform hover:scale-105 flex items-center gap-3">
+                    <i class="fas fa-money-bill-wave text-xl"></i>
+                    <span>Withdraw K{{ available_balance|floatformat:2 }}</span>
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            {% else %}
+                <div class="withdraw-btn disabled bg-gray-300 text-gray-500 px-8 py-3 rounded-xl font-bold shadow-md flex items-center gap-3 cursor-not-allowed">
+                    <i class="fas fa-lock text-lg"></i>
+                    <span>Need K{{ 250|subtract:available_balance|floatformat:2 }} more to withdraw</span>
+                    <i class="fas fa-info-circle"></i>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Withdrawal Progress Card (when balance is below threshold) -->
+        {% if available_balance < 250 and available_balance > 0 %}
+        <div class="balance-card rounded-xl p-6 mb-8">
+            <div class="flex flex-wrap justify-between items-center gap-4">
+                <div>
+                    <p class="text-sm opacity-75">Withdrawal Progress</p>
+                    <p class="text-3xl font-bold">K{{ available_balance|floatformat:2 }} / K250</p>
+                    <p class="text-sm opacity-75 mt-1">Need K{{ 250|subtract:available_balance|floatformat:2 }} more to withdraw</p>
+                </div>
+                <div class="w-48">
+                    <div class="bg-white bg-opacity-30 rounded-full h-3 overflow-hidden">
+                        <div class="withdraw-progress bg-yellow-400 h-3 rounded-full" style="width: {% widthratio available_balance 250 100 %}%"></div>
+                    </div>
+                    <p class="text-xs text-center mt-2 opacity-75">{{ available_balance|floatformat:2 }}% of minimum withdrawal</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Navigation Tabs -->
+        <div class="flex border-b mb-6 flex-wrap">
+            <button class="tab-btn px-6 py-3 font-semibold transition {% if active_tab == 'overview' %}active bg-green-600 text-white rounded-t-lg{% else %}text-gray-600 hover:text-green-600{% endif %}" onclick="showTab('overview')">
+                <i class="fas fa-chart-line mr-2"></i> Overview
+            </button>
+            <button class="tab-btn px-6 py-3 font-semibold transition {% if active_tab == 'books' %}active bg-green-600 text-white rounded-t-lg{% else %}text-gray-600 hover:text-green-600{% endif %}" onclick="showTab('books')">
+                <i class="fas fa-book mr-2"></i> Books
+            </button>
+            <button class="tab-btn px-6 py-3 font-semibold transition {% if active_tab == 'earnings' %}active bg-green-600 text-white rounded-t-lg{% else %}text-gray-600 hover:text-green-600{% endif %}" onclick="showTab('earnings')">
+                <i class="fas fa-money-bill-wave mr-2"></i> Earnings History
+            </button>
+        </div>
+        
+        <!-- Overview Tab -->
+        <div id="tab-overview" class="tab-content active">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="stat-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Total Earnings</p>
+                            <p class="text-2xl font-bold text-green-600">K{{ total_earnings|floatformat:2|intcomma }}</p>
+                            <p class="text-xs text-gray-400">Lifetime earnings</p>
+                        </div>
+                        <div class="bg-green-100 rounded-full p-3">
+                            <i class="fas fa-money-bill-wave text-green-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Available Balance</p>
+                            <p class="text-2xl font-bold text-blue-600">K{{ available_balance|floatformat:2|intcomma }}</p>
+                            <p class="text-xs text-gray-400">Ready for withdrawal</p>
+                        </div>
+                        <div class="bg-blue-100 rounded-full p-3">
+                            <i class="fas fa-wallet text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Total Books</p>
+                            <p class="text-2xl font-bold text-purple-600">{{ total_books }}</p>
+                            <p class="text-xs text-gray-400">Uploaded all time</p>
+                        </div>
+                        <div class="bg-purple-100 rounded-full p-3">
+                            <i class="fas fa-book text-purple-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">This Month</p>
+                            <p class="text-2xl font-bold text-emerald-600">K{{ this_month_earnings|floatformat:2|intcomma }}</p>
+                            <p class="text-xs {% if earnings_change > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                                {% if earnings_change > 0 %}+{% endif %}{{ earnings_change|floatformat:1 }}% from last month
+                            </p>
+                        </div>
+                        <div class="bg-emerald-100 rounded-full p-3">
+                            <i class="fas fa-calendar-alt text-emerald-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Book Status Summary -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white rounded-lg shadow-sm p-4 text-center border-l-4 border-green-500">
+                    <p class="text-2xl font-bold text-green-600">{{ approved_books }}</p>
+                    <p class="text-sm text-gray-500">Approved Books</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm p-4 text-center border-l-4 border-yellow-500">
+                    <p class="text-2xl font-bold text-yellow-600">{{ pending_books }}</p>
+                    <p class="text-sm text-gray-500">Pending Review</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm p-4 text-center border-l-4 border-red-500">
+                    <p class="text-2xl font-bold text-red-600">{{ rejected_books }}</p>
+                    <p class="text-sm text-gray-500">Rejected</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm p-4 text-center border-l-4 border-blue-500">
+                    <p class="text-2xl font-bold text-blue-600">{{ total_books }}</p>
+                    <p class="text-sm text-gray-500">Total Uploaded</p>
+                </div>
+            </div>
+            
+            <!-- Earnings by Month Chart -->
+            <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-chart-bar text-green-600 mr-2"></i>
+                    Monthly Earnings
+                </h2>
+                <div class="space-y-3">
+                    {% for month_data in earnings_by_month %}
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="font-medium">{{ month_data.month }}</span>
+                            <span class="text-green-600 font-semibold">K{{ month_data.total|floatformat:2 }}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-green-600 rounded-full h-2" style="width: {% widthratio month_data.total total_earnings 100 %}%"></div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500 text-center py-4">No earnings data available</p>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Recent Earnings -->
+            <div class="bg-white rounded-xl shadow-md">
+                <div class="border-b px-6 py-4 flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-gray-800">Recent Earnings</h2>
+                    {% if available_balance >= 250 %}
+                    <a href="{% url 'books:request_withdrawal' %}" class="text-orange-600 hover:text-orange-700 text-sm font-semibold">
+                        Withdraw Now <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="divide-y">
+                    {% for earning in recent_earnings %}
+                    <div class="earning-row px-6 py-3 flex justify-between items-center">
+                        <div>
+                            <p class="font-semibold text-gray-800">{{ earning.description|default:"Book Upload" }}</p>
+                            <p class="text-xs text-gray-500">{{ earning.created_at|date:"M d, Y H:i" }}</p>
+                            {% if earning.book %}
+                            <p class="text-xs text-gray-500">Book: {{ earning.book.title }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="text-right">
+                            <p class="text-lg font-bold text-green-600">+K{{ earning.amount|floatformat:2 }}</p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="px-6 py-8 text-center text-gray-500">
+                        <i class="fas fa-chart-line text-4xl mb-2"></i>
+                        <p>No earnings yet. Upload books to start earning!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Books Tab -->
+        <div id="tab-books" class="tab-content">
+            <!-- Book Status Tabs -->
+            <div class="flex gap-2 mb-6 flex-wrap">
+                <button class="book-filter-btn px-4 py-2 rounded-lg bg-green-600 text-white" onclick="filterBooks('all')">All Books</button>
+                <button class="book-filter-btn px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-green-100" onclick="filterBooks('approved')">Approved</button>
+                <button class="book-filter-btn px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-yellow-100" onclick="filterBooks('pending')">Pending</button>
+            </div>
+            
+            <!-- Books List -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Book Title</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Downloads</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Views</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Earnings</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Uploaded</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y" id="booksTableBody">
+                            {% for book in books %}
+                            <tr class="book-row hover:bg-gray-50 transition" data-status="{% if book.is_active %}approved{% else %}pending{% endif %}">
+                                <td class="px-6 py-4">
+                                    <div>
+                                        <p class="font-semibold text-gray-800">{{ book.title }}</p>
+                                        <p class="text-xs text-gray-500">{{ book.author }}</p>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    {% if book.is_active %}
+                                    <span class="status-badge status-approved">
+                                        <i class="fas fa-check-circle mr-1"></i> Approved
+                                    </span>
+                                    {% else %}
+                                    <span class="status-badge status-pending">
+                                        <i class="fas fa-clock mr-1"></i> Pending
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 text-gray-600">{{ book.downloads_count }}</td>
+                                <td class="px-6 py-4 text-gray-600">{{ book.views_count }}</td>
+                                <td class="px-6 py-4 font-semibold text-green-600">K5.00</td>
+                                <td class="px-6 py-4 text-sm text-gray-500">{{ book.created_at|date:"M d, Y" }}</td>
+                                <td class="px-6 py-4">
+                                    <a href="{% url 'books:book_detail' book.slug %}" class="text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                                    <i class="fas fa-book-open text-4xl mb-2"></i>
+                                    <p>No books uploaded yet.</p>
+                                    <a href="{% url 'downloads:upload_book' %}" class="mt-2 inline-block text-green-600 hover:underline">Upload your first book →</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Earnings History Tab -->
+        <div id="tab-earnings" class="tab-content">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="border-b px-6 py-4">
+                    <h2 class="text-xl font-bold text-gray-800">Earnings History</h2>
+                </div>
+                <div class="divide-y">
+                    {% for earning in recent_earnings %}
+                    <div class="earning-row px-6 py-4 flex justify-between items-center">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-dollar-sign text-green-600"></i>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-800">{{ earning.description|default:"Book Upload" }}</p>
+                                    <p class="text-xs text-gray-500">{{ earning.created_at|date:"F d, Y \a\t h:i A" }}</p>
+                                    {% if earning.book %}
+                                    <p class="text-xs text-gray-400">Book: {{ earning.book.title }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xl font-bold text-green-600">+K{{ earning.amount|floatformat:2 }}</p>
+                            <p class="text-xs text-gray-400">Earned</p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="px-6 py-12 text-center text-gray-500">
+                        <i class="fas fa-receipt text-5xl mb-3"></i>
+                        <p>No earning records yet</p>
+                        <p class="text-sm mt-1">Upload books to start earning K5.00 per book</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Show selected tab
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+        
+        // Update button styles
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active', 'bg-green-600', 'text-white');
+            btn.classList.add('text-gray-600');
+        });
+        
+        // Style active button
+        if (event && event.target) {
+            event.target.classList.add('active', 'bg-green-600', 'text-white');
+            event.target.classList.remove('text-gray-600');
+        }
+    }
+    
+    function filterBooks(status) {
+        const rows = document.querySelectorAll('.book-row');
+        const buttons = document.querySelectorAll('.book-filter-btn');
+        
+        // Update button styles
+        buttons.forEach(btn => {
+            btn.classList.remove('bg-green-600', 'text-white');
+            btn.classList.add('bg-gray-200', 'text-gray-700');
+        });
+        
+        if (event && event.target) {
+            event.target.classList.add('bg-green-600', 'text-white');
+            event.target.classList.remove('bg-gray-200', 'text-gray-700');
+        }
+        
+        rows.forEach(row => {
+            if (status === 'all' || row.dataset.status === status) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

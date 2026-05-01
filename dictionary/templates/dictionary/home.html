@@ -1,0 +1,243 @@
+<!-- dictionary/templates/dictionary/home.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dictionary - Bantu Books Zambia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .alphabet-btn {
+        transition: all 0.2s ease;
+    }
+    .alphabet-btn:hover {
+        transform: translateY(-2px);
+    }
+    .alphabet-btn.active {
+        background-color: #059669;
+        color: white;
+        transform: scale(1.05);
+    }
+    .word-suggestion {
+        transition: all 0.2s ease;
+    }
+    .word-suggestion:hover {
+        background-color: #f0fdf4;
+        transform: translateX(5px);
+    }
+    .loading-spinner {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        border: 3px solid #e5e7eb;
+        border-radius: 50%;
+        border-top-color: #059669;
+        animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">📚 Dictionary</h1>
+            <p class="text-gray-600">Learn new words and improve your vocabulary</p>
+            {% if total_words %}
+            <p class="text-sm text-gray-500 mt-1">{{ total_words }} words in dictionary</p>
+            {% endif %}
+        </div>
+        
+        <!-- Search Bar -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+            <form method="get" action="{% url 'dictionary:home' %}" class="flex gap-2">
+                <div class="flex-1 relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" name="q" id="searchInput" 
+                           placeholder="Search for a word..." 
+                           class="w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:border-green-500"
+                           value="{{ query|default:'' }}">
+                </div>
+                <button type="submit" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                {% if query %}
+                <a href="{% url 'dictionary:home' %}" class="bg-gray-200 text-gray-600 px-4 py-3 rounded-lg hover:bg-gray-300 transition">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+                {% endif %}
+            </form>
+        </div>
+        
+        <!-- Quick Word Suggestions -->
+        <div class="mb-6">
+            <h3 class="text-sm font-semibold text-gray-600 mb-2">Popular Words:</h3>
+            <div class="flex flex-wrap gap-2">
+                <a href="?q=Education" class="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-green-100 transition">Education</a>
+                <a href="?q=Science" class="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-green-100 transition">Science</a>
+                <a href="?q=Mathematics" class="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-green-100 transition">Mathematics</a>
+                <a href="?q=ECZ" class="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-green-100 transition">ECZ</a>
+                <a href="?q=Zambia" class="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-green-100 transition">Zambia</a>
+                <a href="?q=Computer" class="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-green-100 transition">Computer</a>
+                <a href="?q=Biology" class="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-green-100 transition">Biology</a>
+                <a href="?q=Chemistry" class="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-green-100 transition">Chemistry</a>
+                <a href="?q=Physics" class="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-green-100 transition">Physics</a>
+            </div>
+        </div>
+        
+        <!-- Alphabet Filter -->
+        <div class="bg-white rounded-xl shadow-md p-4 mb-6">
+            <h3 class="text-sm font-semibold text-gray-600 mb-3">Browse by Letter:</h3>
+            <div class="flex flex-wrap gap-2 justify-center">
+                {% for letter in alphabet %}
+                <a href="?letter={{ letter }}" 
+                   class="alphabet-btn w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-green-600 hover:text-white transition {% if active_letter == letter %}active bg-green-600 text-white{% endif %}">
+                    {{ letter }}
+                </a>
+                {% endfor %}
+                <a href="{% url 'dictionary:home' %}" 
+                   class="alphabet-btn px-4 h-10 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-gray-300 transition">
+                    <i class="fas fa-list"></i> All
+                </a>
+            </div>
+        </div>
+        
+        <!-- Results Summary -->
+        {% if query or active_letter %}
+        <div class="mb-4 flex justify-between items-center">
+            <p class="text-sm text-gray-600">
+                <i class="fas fa-search mr-1"></i> 
+                Found <span class="font-semibold text-green-600">{{ words.paginator.count }}</span> 
+                result{{ words.paginator.count|pluralize }} 
+                {% if query %}for "<span class="font-semibold">{{ query }}</span>"{% endif %}
+                {% if active_letter %}starting with "<span class="font-semibold">{{ active_letter }}</span>"{% endif %}
+            </p>
+        </div>
+        {% endif %}
+        
+        <!-- Word List -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            {% if words %}
+            <div class="divide-y">
+                {% for word in words %}
+                <a href="{% url 'dictionary:word_detail' word.slug %}" class="word-suggestion block px-6 py-4 hover:bg-gray-50 transition group">
+                    <div class="flex justify-between items-center">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                <h3 class="font-bold text-lg text-gray-800 group-hover:text-green-600 transition">
+                                    {{ word.word }}
+                                </h3>
+                                {% if word.is_zambian_term %}
+                                <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">🇿🇲 Zambian</span>
+                                {% endif %}
+                                {% if word.part_of_speech %}
+                                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ word.get_part_of_speech_display }}</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-sm text-gray-600 line-clamp-2">{{ word.definition|truncatewords:20 }}</p>
+                        </div>
+                        <div class="ml-4">
+                            <i class="fas fa-chevron-right text-gray-300 group-hover:text-green-600 transition"></i>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if words.has_other_pages %}
+            <div class="px-6 py-4 border-t bg-gray-50">
+                <div class="flex justify-center gap-2">
+                    {% if words.has_previous %}
+                    <a href="?page={{ words.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if active_letter %}&letter={{ active_letter }}{% endif %}" 
+                       class="px-3 py-1 border rounded-lg hover:bg-gray-100 transition text-sm">
+                        ← Previous
+                    </a>
+                    {% endif %}
+                    
+                    <span class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm">
+                        {{ words.number }}
+                    </span>
+                    
+                    {% if words.has_next %}
+                    <a href="?page={{ words.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if active_letter %}&letter={{ active_letter }}{% endif %}" 
+                       class="px-3 py-1 border rounded-lg hover:bg-gray-100 transition text-sm">
+                        Next →
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <div class="px-6 py-12 text-center">
+                <i class="fas fa-book-open text-5xl text-gray-300 mb-3"></i>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">No words found</h3>
+                <p class="text-gray-500">
+                    {% if query %}
+                    No results found for "<span class="font-semibold">{{ query }}</span>"
+                    {% elif active_letter %}
+                    No words starting with "{{ active_letter }}"
+                    {% else %}
+                    Try typing a word in the search box above!
+                    {% endif %}
+                </p>
+                {% if not query and not active_letter %}
+                <div class="mt-4">
+                    <p class="text-sm text-gray-500">You can also try these common words:</p>
+                    <div class="flex flex-wrap gap-2 justify-center mt-2">
+                        <a href="?q=School" class="text-green-600 hover:underline">School</a>
+                        <a href="?q=Teacher" class="text-green-600 hover:underline">Teacher</a>
+                        <a href="?q=Student" class="text-green-600 hover:underline">Student</a>
+                        <a href="?q=Book" class="text-green-600 hover:underline">Book</a>
+                        <a href="?q=Learn" class="text-green-600 hover:underline">Learn</a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Suggestions -->
+        {% if suggestions %}
+        <div class="mt-6 bg-yellow-50 rounded-xl p-4">
+            <p class="text-sm text-yellow-800 mb-2">
+                <i class="fas fa-lightbulb mr-1"></i> Did you mean:
+            </p>
+            <div class="flex flex-wrap gap-2">
+                {% for suggestion in suggestions %}
+                <a href="?q={{ suggestion }}" class="px-3 py-1 bg-white rounded-full text-sm text-gray-700 hover:bg-green-100 transition">
+                    {{ suggestion }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Simple search - just submit the form
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                // Form will submit automatically
+                return true;
+            }
+        });
+    }
+</script>
+
+<style>
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,992 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Upload Book - Bantu Books Zambia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.3s ease;
+    }
+    .form-section:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    .form-section h3 {
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: #1f2937;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #059669;
+        display: flex;
+        align-items: center;
+    }
+    .file-preview {
+        margin-top: 0.5rem;
+        padding: 0.75rem;
+        background: #f9fafb;
+        border-radius: 0.5rem;
+        display: none;
+    }
+    .file-preview.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+    .image-preview {
+        max-width: 150px;
+        max-height: 150px;
+        border-radius: 0.5rem;
+        object-fit: cover;
+    }
+    .drag-area {
+        border: 2px dashed #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .drag-area:hover, .drag-area.dragover {
+        border-color: #059669;
+        background-color: #f0fdf4;
+    }
+    .bulk-drag-area {
+        border: 2px dashed #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background: #f8fafc;
+    }
+    .bulk-drag-area:hover, .bulk-drag-area.dragover {
+        border-color: #059669;
+        background-color: #f0fdf4;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .category-option {
+        padding: 0.5rem;
+        transition: background 0.2s ease;
+    }
+    .category-option:hover {
+        background-color: #f0fdf4;
+    }
+    .level-0 {
+        font-weight: 600;
+        background-color: #f8fafc;
+        border-left: 3px solid #059669;
+    }
+    .level-1 {
+        padding-left: 1.75rem !important;
+        font-weight: 500;
+        color: #374151;
+    }
+    .level-2 {
+        padding-left: 3rem !important;
+        font-size: 0.9rem;
+        color: #4b5563;
+    }
+    .required-field::after {
+        content: '*';
+        color: #ef4444;
+        margin-left: 0.25rem;
+    }
+    .helper-text {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+    }
+    select:disabled, input:disabled {
+        background-color: #f3f4f6;
+        cursor: not-allowed;
+    }
+    .category-summary {
+        margin-top: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        background: #f0fdf4;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        display: none;
+    }
+    .category-summary.active {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .category-badge {
+        background: white;
+        border-radius: 0.375rem;
+        padding: 0.25rem 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .tab-btn {
+        transition: all 0.2s ease;
+    }
+    .tab-btn.active {
+        background: #059669;
+        color: white;
+    }
+    .tab-content {
+        display: none;
+    }
+    .tab-content.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+    .progress-bar {
+        transition: width 0.3s ease;
+    }
+    .upload-status {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Upload Books</h1>
+            <p class="text-gray-600">Share your knowledge with the Zambian community</p>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="flex border-b mb-6">
+            <button class="tab-btn px-6 py-3 font-semibold transition active bg-green-600 text-white rounded-t-lg" onclick="showTab('single')">
+                <i class="fas fa-file-upload mr-2"></i> Single Upload
+            </button>
+            <button class="tab-btn px-6 py-3 font-semibold transition text-gray-600 hover:text-green-600" onclick="showTab('bulk')">
+                <i class="fas fa-layer-group mr-2"></i> Bulk Upload
+            </button>
+        </div>
+        
+        <!-- Single Upload Tab -->
+        <div id="singleTab" class="tab-content active">
+            <form method="post" enctype="multipart/form-data" id="uploadForm">
+                {% csrf_token %}
+                
+                <!-- Basic Information -->
+                <div class="form-section">
+                    <h3><i class="fas fa-info-circle text-green-600 mr-2"></i> Basic Information</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2 required-field">Book Title</label>
+                            <input type="text" name="title" id="title" required 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                                   placeholder="Enter book title">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2 required-field">Author</label>
+                            <input type="text" name="author" id="author" required 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                                   placeholder="Author name">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-gray-700 font-semibold mb-2 required-field">Description</label>
+                            <textarea name="description" id="description" rows="5" required 
+                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                                      placeholder="Describe the book..."></textarea>
+                            <p class="text-xs text-gray-500 mt-1" id="charCount">0 / 5000 characters</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Classification - 3 Level Category System -->
+                <div class="form-section">
+                    <h3><i class="fas fa-layer-group text-green-600 mr-2"></i> Classification</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-gray-700 font-semibold mb-2 required-field">Category (3-Level Hierarchy)</label>
+                            
+                            <!-- Top Level Category -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-600 mb-1">
+                                    <i class="fas fa-folder-open text-green-600 mr-1"></i> 1. Top Level (Subject Area)
+                                </label>
+                                <select id="topLevelCategory" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
+                                    <option value="">-- Select Top Level Category --</option>
+                                    {% for category in categories %}
+                                        {% if category.level == 0 %}
+                                        <option value="{{ category.id }}" data-level="0" data-name="{{ category.name }}">
+                                            📁 {{ category.name }}
+                                        </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Subcategory Level -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-600 mb-1">
+                                    <i class="fas fa-folder text-green-600 mr-1"></i> 2. Subcategory
+                                </label>
+                                <select id="subCategory" disabled class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition bg-gray-50">
+                                    <option value="">-- First select a top level category --</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Subject/Course Level -->
+                            <div class="mb-3">
+                                <label class="block text-sm font-medium text-gray-600 mb-1">
+                                    <i class="fas fa-file-alt text-green-600 mr-1"></i> 3. Subject / Course (Final Selection)
+                                </label>
+                                <select id="subjectCategory" name="category" required disabled class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition bg-gray-50">
+                                    <option value="">-- First select a subcategory --</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Selected Category Summary -->
+                            <div id="categorySummary" class="category-summary">
+                                <i class="fas fa-check-circle text-green-600"></i>
+                                <span>Selected: </span>
+                                <span id="selectedTopName" class="font-medium"></span>
+                                <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                                <span id="selectedSubName" class="font-medium"></span>
+                                <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                                <span id="selectedSubjectName" class="font-medium text-green-700"></span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Grade Level</label>
+                            <select name="grade_level" id="grade_level" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
+                                <option value="">-- Select Grade Level --</option>
+                                {% for grade in grade_levels %}
+                                <option value="{{ grade.id }}">{{ grade.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Language</label>
+                            <select name="language" id="language" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
+                                <option value="">-- Select Language --</option>
+                                {% for lang in languages %}
+                                <option value="{{ lang.id }}">{{ lang.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pricing -->
+                <div class="form-section">
+                    <h3><i class="fas fa-tag text-green-600 mr-2"></i> Pricing</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" name="is_free" id="isFree" class="form-checkbox text-green-600 mr-2 w-4 h-4">
+                                <span class="text-gray-700 font-semibold">Free Book</span>
+                            </label>
+                            <p class="text-xs text-gray-500 mt-1">Free books are available to all users</p>
+                        </div>
+                        <div id="priceField">
+                            <label class="block text-gray-700 font-semibold mb-2">Price (K)</label>
+                            <input type="number" name="price" id="price" step="0.01" value="0" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                                   placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Files -->
+                <div class="form-section">
+                    <h3><i class="fas fa-file-pdf text-green-600 mr-2"></i> Files</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2 required-field">PDF File</label>
+                            <div class="drag-area" id="pdfDragArea">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                                <p class="text-gray-600">Drag & drop PDF file here or click to browse</p>
+                                <p class="text-xs text-gray-500 mt-1">PDF files only (Max 50MB)</p>
+                                <input type="file" name="pdf_file" id="pdfFile" accept=".pdf" required class="hidden">
+                            </div>
+                            <div id="pdfPreview" class="file-preview">
+                                <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-file-pdf text-red-500 text-2xl mr-3"></i>
+                                        <div>
+                                            <p id="pdfName" class="text-sm font-semibold text-gray-700"></p>
+                                            <p id="pdfSize" class="text-xs text-gray-500"></p>
+                                        </div>
+                                    </div>
+                                    <button type="button" onclick="clearFile('pdf')" class="text-red-500 hover:text-red-700 transition">
+                                        <i class="fas fa-times-circle"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Cover Image (Optional)</label>
+                            <div class="drag-area" id="imageDragArea">
+                                <i class="fas fa-image text-4xl text-gray-400 mb-2"></i>
+                                <p class="text-gray-600">Drag & drop cover image here or click to browse</p>
+                                <p class="text-xs text-gray-500 mt-1">JPG, PNG, GIF (Max 5MB)</p>
+                                <input type="file" name="cover_image" id="coverImage" accept="image/*" class="hidden">
+                            </div>
+                            <div id="imagePreview" class="file-preview text-center">
+                                <div class="inline-block p-2 bg-green-50 rounded-lg">
+                                    <img id="coverPreview" class="image-preview mx-auto mb-2">
+                                    <button type="button" onclick="clearFile('image')" class="text-red-500 hover:text-red-700 text-sm transition">
+                                        <i class="fas fa-trash-alt mr-1"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Metadata -->
+                <div class="form-section">
+                    <h3><i class="fas fa-database text-green-600 mr-2"></i> Additional Information</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Publication Year</label>
+                            <input type="number" name="publication_year" id="publicationYear" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                                   placeholder="e.g., 2024" min="1900" max="2025">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Publisher</label>
+                            <input type="text" name="publisher" id="publisher" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                                   placeholder="Publisher name">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Number of Pages</label>
+                            <input type="number" name="pages" id="pages" value="0" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                                   min="0">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">ISBN</label>
+                            <input type="text" name="isbn" id="isbn" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                                   placeholder="ISBN-10 or ISBN-13">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="flex justify-end gap-3 mt-6">
+                    <a href="{% url 'books:book_list' %}" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition">
+                        Cancel
+                    </a>
+                    <button type="submit" class="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-2 rounded-lg hover:from-green-700 hover:to-emerald-700 transition shadow-md hover:shadow-lg">
+                        <i class="fas fa-upload mr-2"></i> Upload Book
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Bulk Upload Tab -->
+        <div id="bulkTab" class="tab-content">
+            <div class="form-section">
+                <h3><i class="fas fa-layer-group text-green-600 mr-2"></i> Bulk Upload Books</h3>
+                <div class="space-y-4">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-info-circle text-blue-500 text-xl"></i>
+                            <div>
+                                <p class="font-semibold text-blue-800">Bulk Upload Instructions</p>
+                                <ul class="text-sm text-blue-700 mt-1 list-disc list-inside">
+                                    <li>Upload a CSV or Excel file with your book data</li>
+                                    <li>Required columns: title, author, description, category_id</li>
+                                    <li>Optional columns: grade_level_id, language_id, is_free, price, publication_year, publisher, pages, isbn</li>
+                                    <li>PDF files should be uploaded separately in a ZIP file</li>
+                                    <li>Maximum 100 books per bulk upload</li>
+                                </ul>
+                                <div class="mt-3">
+                                    <a href="{% url 'downloads:download_bulk_template' %}" class="text-blue-600 hover:underline text-sm">
+                                        <i class="fas fa-download mr-1"></i> Download CSV Template
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="post" enctype="multipart/form-data" id="bulkUploadForm" action="{% url 'downloads:bulk_upload' %}">
+                        {% csrf_token %}
+                        
+                        <!-- Data File Upload -->
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2 required-field">Data File (CSV/Excel)</label>
+                            <div class="bulk-drag-area" id="dataDragArea">
+                                <i class="fas fa-file-csv text-4xl text-gray-400 mb-2"></i>
+                                <p class="text-gray-600">Drag & drop CSV/Excel file here or click to browse</p>
+                                <p class="text-xs text-gray-500 mt-1">CSV, XLS, XLSX files only (Max 10MB)</p>
+                                <input type="file" name="data_file" id="dataFile" accept=".csv,.xls,.xlsx" required class="hidden">
+                            </div>
+                            <div id="dataPreview" class="file-preview">
+                                <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-file-excel text-green-500 text-2xl mr-3"></i>
+                                        <div>
+                                            <p id="dataName" class="text-sm font-semibold text-gray-700"></p>
+                                            <p id="dataSize" class="text-xs text-gray-500"></p>
+                                        </div>
+                                    </div>
+                                    <button type="button" onclick="clearDataFile()" class="text-red-500 hover:text-red-700 transition">
+                                        <i class="fas fa-times-circle"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- ZIP File Upload for PDFs -->
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">PDF Files (ZIP Archive)</label>
+                            <div class="bulk-drag-area" id="zipDragArea">
+                                <i class="fas fa-file-archive text-4xl text-gray-400 mb-2"></i>
+                                <p class="text-gray-600">Drag & drop ZIP file containing PDFs here or click to browse</p>
+                                <p class="text-xs text-gray-500 mt-1">ZIP files only (Max 500MB)</p>
+                                <p class="text-xs text-gray-500">PDF filenames should match the book titles or IDs in your data file</p>
+                                <input type="file" name="zip_file" id="zipFile" accept=".zip" class="hidden">
+                            </div>
+                            <div id="zipPreview" class="file-preview">
+                                <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-file-archive text-orange-500 text-2xl mr-3"></i>
+                                        <div>
+                                            <p id="zipName" class="text-sm font-semibold text-gray-700"></p>
+                                            <p id="zipSize" class="text-xs text-gray-500"></p>
+                                        </div>
+                                    </div>
+                                    <button type="button" onclick="clearZipFile()" class="text-red-500 hover:text-red-700 transition">
+                                        <i class="fas fa-times-circle"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Upload Progress -->
+                        <div id="uploadProgress" class="hidden">
+                            <div class="bg-white rounded-lg p-4 border">
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm font-semibold">Uploading...</span>
+                                    <span id="progressPercent" class="text-sm font-semibold text-green-600">0%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div id="progressBar" class="progress-bar bg-green-600 h-2 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div id="uploadStatus" class="upload-status mt-4 space-y-2"></div>
+                        </div>
+                        
+                        <div class="flex justify-end gap-3 mt-6">
+                            <a href="{% url 'books:book_list' %}" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition">
+                                Cancel
+                            </a>
+                            <button type="submit" id="bulkUploadBtn" class="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-2 rounded-lg hover:from-green-700 hover:to-emerald-700 transition shadow-md hover:shadow-lg">
+                                <i class="fas fa-upload mr-2"></i> Bulk Upload
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Store categories data for dynamic loading
+    const allCategories = {
+        {% for category in categories %}
+            {{ category.id }}: {
+                id: {{ category.id }},
+                name: "{{ category.name|escapejs }}",
+                parent_id: {{ category.parent_id|default:"null" }},
+                level: {{ category.level }},
+                slug: "{{ category.slug|escapejs }}"
+            },
+        {% endfor %}
+    };
+    
+    // Tab switching
+    function showTab(tab) {
+        const singleTab = document.getElementById('singleTab');
+        const bulkTab = document.getElementById('bulkTab');
+        const buttons = document.querySelectorAll('.tab-btn');
+        
+        if (tab === 'single') {
+            singleTab.classList.add('active');
+            bulkTab.classList.remove('active');
+            buttons[0].classList.add('active', 'bg-green-600', 'text-white');
+            buttons[0].classList.remove('text-gray-600');
+            buttons[1].classList.remove('active', 'bg-green-600', 'text-white');
+            buttons[1].classList.add('text-gray-600');
+        } else {
+            bulkTab.classList.add('active');
+            singleTab.classList.remove('active');
+            buttons[1].classList.add('active', 'bg-green-600', 'text-white');
+            buttons[1].classList.remove('text-gray-600');
+            buttons[0].classList.remove('active', 'bg-green-600', 'text-white');
+            buttons[0].classList.add('text-gray-600');
+        }
+    }
+    
+    // DOM Elements for single upload
+    const topLevelSelect = document.getElementById('topLevelCategory');
+    const subCategorySelect = document.getElementById('subCategory');
+    const subjectCategorySelect = document.getElementById('subjectCategory');
+    const categorySummary = document.getElementById('categorySummary');
+    const selectedTopName = document.getElementById('selectedTopName');
+    const selectedSubName = document.getElementById('selectedSubName');
+    const selectedSubjectName = document.getElementById('selectedSubjectName');
+    
+    function getChildCategories(parentId) {
+        const children = [];
+        for (const id in allCategories) {
+            const cat = allCategories[id];
+            if (cat.parent_id === parentId) {
+                children.push(cat);
+            }
+        }
+        children.sort((a, b) => a.name.localeCompare(b.name));
+        return children;
+    }
+    
+    function populateSubCategories(parentId) {
+        subCategorySelect.innerHTML = '<option value="">-- Select Subcategory --</option>';
+        subjectCategorySelect.innerHTML = '<option value="">-- First select a subcategory --</option>';
+        subjectCategorySelect.disabled = true;
+        selectedSubName.textContent = '';
+        selectedSubjectName.textContent = '';
+        
+        if (!parentId) {
+            subCategorySelect.disabled = true;
+            subCategorySelect.innerHTML = '<option value="">-- First select a top level category --</option>';
+            return;
+        }
+        
+        const children = getChildCategories(parseInt(parentId));
+        
+        if (children.length === 0) {
+            subCategorySelect.innerHTML = '<option value="">-- No subcategories available --</option>';
+            subCategorySelect.disabled = true;
+            return;
+        }
+        
+        subCategorySelect.disabled = false;
+        children.forEach(child => {
+            const option = document.createElement('option');
+            option.value = child.id;
+            option.textContent = '📂 ' + child.name;
+            option.setAttribute('data-level', '1');
+            subCategorySelect.appendChild(option);
+        });
+    }
+    
+    function populateSubjects(parentId) {
+        subjectCategorySelect.innerHTML = '<option value="">-- Select Subject/Course --</option>';
+        selectedSubjectName.textContent = '';
+        
+        if (!parentId) {
+            subjectCategorySelect.disabled = true;
+            subjectCategorySelect.innerHTML = '<option value="">-- First select a subcategory --</option>';
+            return;
+        }
+        
+        const children = getChildCategories(parseInt(parentId));
+        
+        if (children.length === 0) {
+            subjectCategorySelect.innerHTML = '<option value="">-- No subjects/courses available --</option>';
+            subjectCategorySelect.disabled = true;
+            return;
+        }
+        
+        subjectCategorySelect.disabled = false;
+        children.forEach(child => {
+            const option = document.createElement('option');
+            option.value = child.id;
+            option.textContent = '📄 ' + child.name;
+            option.setAttribute('data-level', '2');
+            subjectCategorySelect.appendChild(option);
+        });
+    }
+    
+    function updateCategorySummary() {
+        const topId = topLevelSelect.value;
+        const subId = subCategorySelect.value;
+        const subjectId = subjectCategorySelect.value;
+        
+        if (topId && allCategories[topId]) {
+            selectedTopName.textContent = allCategories[topId].name;
+        } else {
+            selectedTopName.textContent = '';
+        }
+        
+        if (subId && allCategories[subId]) {
+            selectedSubName.textContent = allCategories[subId].name;
+        } else {
+            selectedSubName.textContent = '';
+        }
+        
+        if (subjectId && allCategories[subjectId]) {
+            selectedSubjectName.textContent = allCategories[subjectId].name;
+            categorySummary.classList.add('active');
+        } else {
+            selectedSubjectName.textContent = '';
+            if (!subjectId) {
+                categorySummary.classList.remove('active');
+            }
+        }
+        
+        if (topId && subId && !subjectId) {
+            categorySummary.classList.add('active');
+        } else if (!topId && !subId && !subjectId) {
+            categorySummary.classList.remove('active');
+        }
+    }
+    
+    if (topLevelSelect) {
+        topLevelSelect.addEventListener('change', function() {
+            const selectedTopId = this.value;
+            if (selectedTopId) {
+                populateSubCategories(selectedTopId);
+                subCategorySelect.value = '';
+                subjectCategorySelect.value = '';
+                subjectCategorySelect.disabled = true;
+                selectedSubName.textContent = '';
+                selectedSubjectName.textContent = '';
+            } else {
+                subCategorySelect.disabled = true;
+                subCategorySelect.innerHTML = '<option value="">-- First select a top level category --</option>';
+                subjectCategorySelect.disabled = true;
+                subjectCategorySelect.innerHTML = '<option value="">-- First select a subcategory --</option>';
+                categorySummary.classList.remove('active');
+            }
+            updateCategorySummary();
+        });
+    }
+    
+    if (subCategorySelect) {
+        subCategorySelect.addEventListener('change', function() {
+            const selectedSubId = this.value;
+            if (selectedSubId) {
+                populateSubjects(selectedSubId);
+                subjectCategorySelect.value = '';
+                selectedSubjectName.textContent = '';
+            } else {
+                subjectCategorySelect.disabled = true;
+                subjectCategorySelect.innerHTML = '<option value="">-- First select a subcategory --</option>';
+                selectedSubjectName.textContent = '';
+            }
+            updateCategorySummary();
+        });
+    }
+    
+    if (subjectCategorySelect) {
+        subjectCategorySelect.addEventListener('change', function() {
+            updateCategorySummary();
+        });
+    }
+    
+    // Character counter
+    const description = document.getElementById('description');
+    const charCount = document.getElementById('charCount');
+    
+    if (description) {
+        description.addEventListener('input', function() {
+            const count = this.value.length;
+            charCount.innerHTML = `${count} / 5000 characters`;
+            if (count > 5000) {
+                charCount.classList.add('text-red-500');
+                this.value = this.value.substring(0, 5000);
+            } else {
+                charCount.classList.remove('text-red-500');
+            }
+        });
+    }
+    
+    // Toggle price field
+    const isFree = document.getElementById('isFree');
+    const priceField = document.getElementById('priceField');
+    const priceInput = document.getElementById('price');
+    
+    if (isFree) {
+        isFree.addEventListener('change', function() {
+            if (this.checked) {
+                priceField.style.opacity = '0.5';
+                priceInput.disabled = true;
+                priceInput.value = '0';
+            } else {
+                priceField.style.opacity = '1';
+                priceInput.disabled = false;
+            }
+        });
+    }
+    
+    // PDF Upload handling
+    const pdfDragArea = document.getElementById('pdfDragArea');
+    const pdfInput = document.getElementById('pdfFile');
+    const pdfPreview = document.getElementById('pdfPreview');
+    const pdfName = document.getElementById('pdfName');
+    const pdfSize = document.getElementById('pdfSize');
+    
+    if (pdfDragArea) {
+        pdfDragArea.addEventListener('click', () => pdfInput.click());
+        pdfDragArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            pdfDragArea.classList.add('dragover');
+        });
+        pdfDragArea.addEventListener('dragleave', () => {
+            pdfDragArea.classList.remove('dragover');
+        });
+        pdfDragArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            pdfDragArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                handlePDFFile(file);
+            } else {
+                alert('Please upload a valid PDF file');
+            }
+        });
+    }
+    
+    if (pdfInput) {
+        pdfInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                handlePDFFile(e.target.files[0]);
+            }
+        });
+    }
+    
+    function handlePDFFile(file) {
+        if (file.size > 50 * 1024 * 1024) {
+            alert('File size must be less than 50MB');
+            return;
+        }
+        pdfName.textContent = file.name;
+        pdfSize.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+        pdfPreview.classList.add('active');
+        pdfDragArea.style.display = 'none';
+    }
+    
+    // Cover Image Upload handling
+    const imageDragArea = document.getElementById('imageDragArea');
+    const imageInput = document.getElementById('coverImage');
+    const imagePreview = document.getElementById('imagePreview');
+    const coverPreview = document.getElementById('coverPreview');
+    
+    if (imageDragArea) {
+        imageDragArea.addEventListener('click', () => imageInput.click());
+        imageDragArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            imageDragArea.classList.add('dragover');
+        });
+        imageDragArea.addEventListener('dragleave', () => {
+            imageDragArea.classList.remove('dragover');
+        });
+        imageDragArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            imageDragArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImageFile(file);
+            } else {
+                alert('Please upload a valid image file');
+            }
+        });
+    }
+    
+    if (imageInput) {
+        imageInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                handleImageFile(e.target.files[0]);
+            }
+        });
+    }
+    
+    function handleImageFile(file) {
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Image size must be less than 5MB');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            coverPreview.src = e.target.result;
+            imagePreview.classList.add('active');
+            imageDragArea.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    function clearFile(type) {
+        if (type === 'pdf') {
+            pdfInput.value = '';
+            pdfPreview.classList.remove('active');
+            pdfDragArea.style.display = 'block';
+        } else if (type === 'image') {
+            imageInput.value = '';
+            imagePreview.classList.remove('active');
+            imageDragArea.style.display = 'block';
+            coverPreview.src = '';
+        }
+    }
+    
+    // Bulk upload file handling
+    const dataDragArea = document.getElementById('dataDragArea');
+    const dataInput = document.getElementById('dataFile');
+    const dataPreview = document.getElementById('dataPreview');
+    const dataName = document.getElementById('dataName');
+    const dataSize = document.getElementById('dataSize');
+    
+    if (dataDragArea) {
+        dataDragArea.addEventListener('click', () => dataInput.click());
+        dataDragArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dataDragArea.classList.add('dragover');
+        });
+        dataDragArea.addEventListener('dragleave', () => {
+            dataDragArea.classList.remove('dragover');
+        });
+        dataDragArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dataDragArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && (file.type === 'text/csv' || file.type === 'application/vnd.ms-excel' || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
+                handleDataFile(file);
+            } else {
+                alert('Please upload a valid CSV or Excel file');
+            }
+        });
+    }
+    
+    if (dataInput) {
+        dataInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                handleDataFile(e.target.files[0]);
+            }
+        });
+    }
+    
+    function handleDataFile(file) {
+        if (file.size > 10 * 1024 * 1024) {
+            alert('File size must be less than 10MB');
+            return;
+        }
+        dataName.textContent = file.name;
+        dataSize.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+        dataPreview.classList.add('active');
+        dataDragArea.style.display = 'none';
+    }
+    
+    function clearDataFile() {
+        dataInput.value = '';
+        dataPreview.classList.remove('active');
+        dataDragArea.style.display = 'block';
+    }
+    
+    // ZIP file handling
+    const zipDragArea = document.getElementById('zipDragArea');
+    const zipInput = document.getElementById('zipFile');
+    const zipPreview = document.getElementById('zipPreview');
+    const zipName = document.getElementById('zipName');
+    const zipSize = document.getElementById('zipSize');
+    
+    if (zipDragArea) {
+        zipDragArea.addEventListener('click', () => zipInput.click());
+        zipDragArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            zipDragArea.classList.add('dragover');
+        });
+        zipDragArea.addEventListener('dragleave', () => {
+            zipDragArea.classList.remove('dragover');
+        });
+        zipDragArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            zipDragArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/zip') {
+                handleZipFile(file);
+            } else {
+                alert('Please upload a valid ZIP file');
+            }
+        });
+    }
+    
+    if (zipInput) {
+        zipInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                handleZipFile(e.target.files[0]);
+            }
+        });
+    }
+    
+    function handleZipFile(file) {
+        if (file.size > 500 * 1024 * 1024) {
+            alert('File size must be less than 500MB');
+            return;
+        }
+        zipName.textContent = file.name;
+        zipSize.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+        zipPreview.classList.add('active');
+        zipDragArea.style.display = 'none';
+    }
+    
+    function clearZipFile() {
+        zipInput.value = '';
+        zipPreview.classList.remove('active');
+        zipDragArea.style.display = 'block';
+    }
+    
+    // Form validation
+    const uploadForm = document.getElementById('uploadForm');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            if (!pdfInput.files[0]) {
+                alert('Please select a PDF file');
+                e.preventDefault();
+                return false;
+            }
+            if (!subjectCategorySelect.value) {
+                alert('Please select a Subject/Course category');
+                subjectCategorySelect.focus();
+                e.preventDefault();
+                return false;
+            }
+            return true;
+        });
+    }
+    
+    // Bulk upload form with progress
+    const bulkForm = document.getElementById('bulkUploadForm');
+    if (bulkForm) {
+        bulkForm.addEventListener('submit', function(e) {
+            if (!dataInput.files[0]) {
+                alert('Please select a data file (CSV/Excel)');
+                e.preventDefault();
+                return false;
+            }
+            
+            // Show progress
+            const progressDiv = document.getElementById('uploadProgress');
+            progressDiv.classList.remove('hidden');
+            
+            // Disable submit button
+            const submitBtn = document.getElementById('bulkUploadBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing...';
+            
+            return true;
+        });
+    }
+</script>
+{% endblock %}

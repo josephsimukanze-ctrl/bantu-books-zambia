@@ -1,0 +1,281 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sign Contributor Agreement - Bantu Books Zambia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .agreement-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .agreement-content {
+        background: #f9fafb;
+        border-radius: 0.75rem;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e5e7eb;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .signature-pad-container {
+        border: 2px solid #e5e7eb;
+        border-radius: 0.5rem;
+        background: white;
+        margin-bottom: 1rem;
+    }
+    
+    .signature-pad-container canvas {
+        width: 100%;
+        height: 200px;
+        border-radius: 0.5rem;
+        cursor: crosshair;
+    }
+    
+    .signature-label {
+        font-size: 0.875rem;
+        color: #4b5563;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    
+    .btn-sign {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-sign:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.3);
+    }
+    
+    .agreement-header {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 0.75rem 0.75rem 0 0;
+    }
+    
+    .checkmark-list {
+        list-style: none;
+        padding-left: 0;
+    }
+    
+    .checkmark-list li {
+        padding-left: 1.5rem;
+        position: relative;
+        margin-bottom: 0.5rem;
+    }
+    
+    .checkmark-list li:before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: #059669;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="agreement-container">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <!-- Header -->
+            <div class="agreement-header">
+                <h1 class="text-2xl font-bold mb-2">Contributor Agreement</h1>
+                <p class="text-green-100">Please review and sign the agreement to become a contributor</p>
+            </div>
+            
+            <!-- Agreement Content -->
+            <div class="p-6">
+                <div class="agreement-content">
+                    {{ agreement.content|safe }}
+                </div>
+                
+                <!-- Key Points Summary -->
+                <div class="bg-green-50 rounded-lg p-4 mb-6">
+                    <h3 class="font-bold text-green-800 mb-3">Key Points Summary:</h3>
+                    <ul class="checkmark-list space-y-2 text-sm text-gray-700">
+                        <li>Earn K5.00 for each approved book uploaded</li>
+                        <li>Monthly payouts on the 15th (minimum K250)</li>
+                        <li>You retain ownership of your content</li>
+                        <li>Content must be original and educational</li>
+                        <li>Maximum 10 books per day upload limit</li>
+                        <li>Withdrawals allowed once per month</li>
+                    </ul>
+                </div>
+                
+                <!-- Signature Pad -->
+                <form method="post" id="agreementForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="signature-label">
+                            <i class="fas fa-pen mr-2 text-green-600"></i>
+                            Digital Signature
+                        </label>
+                        <div class="signature-pad-container">
+                            <canvas id="signatureCanvas" width="600" height="200"></canvas>
+                        </div>
+                        <div class="flex gap-3 mt-2">
+                            <button type="button" onclick="clearSignature()" class="text-sm text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-eraser mr-1"></i> Clear
+                            </button>
+                            <button type="button" onclick="undoSignature()" class="text-sm text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-undo mr-1"></i> Undo
+                            </button>
+                            <button type="button" onclick="saveSignature()" class="text-sm text-green-600 hover:text-green-700">
+                                <i class="fas fa-save mr-1"></i> Save Signature
+                            </button>
+                        </div>
+                        <input type="hidden" id="signature_data" name="signature_data" required>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Sign using your mouse or touch screen. Your signature will be legally binding.
+                        </p>
+                    </div>
+                    
+                    <!-- Signature Preview -->
+                    <div id="signaturePreview" class="hidden mb-4 p-3 bg-gray-50 rounded-lg">
+                        <p class="text-sm font-semibold text-gray-700 mb-2">Signature Preview:</p>
+                        <img id="signatureImage" class="border rounded-lg" style="max-height: 80px;">
+                    </div>
+                    
+                    <div class="flex gap-3 mt-6">
+                        <button type="submit" class="flex-1 btn-sign text-white py-3 rounded-lg font-semibold">
+                            <i class="fas fa-signature mr-2"></i> Sign Agreement
+                        </button>
+                        <a href="{% url 'books:contributor_dashboard' %}" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold text-center hover:bg-gray-300 transition">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+                
+                <p class="text-center text-xs text-gray-500 mt-6">
+                    <i class="fas fa-lock mr-1"></i> 
+                    By signing, you agree to the terms and conditions outlined above.
+                    Your signature will be recorded with timestamp and IP address.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<script>
+    let signaturePad = null;
+    let canvas = null;
+    
+    function initSignaturePad() {
+        canvas = document.getElementById('signatureCanvas');
+        if (!canvas) return;
+        
+        // Set canvas dimensions properly
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            const container = canvas.parentElement;
+            const width = container.clientWidth;
+            const height = 200;
+            
+            canvas.width = width * ratio;
+            canvas.height = height * ratio;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            
+            const ctx = canvas.getContext('2d');
+            ctx.scale(ratio, ratio);
+            
+            if (signaturePad) {
+                signaturePad.clear();
+            }
+        }
+        
+        // Initialize signature pad
+        signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(5, 150, 105)',
+            velocityFilterWeight: 0.7,
+            minWidth: 1,
+            maxWidth: 3,
+            throttle: 16
+        });
+        
+        // Resize on load and window resize
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Update hidden input on signature change
+        signaturePad.addEventListener('endStroke', function() {
+            if (!signaturePad.isEmpty()) {
+                const signatureData = signaturePad.toDataURL();
+                document.getElementById('signature_data').value = signatureData;
+                
+                // Show preview
+                const preview = document.getElementById('signaturePreview');
+                const previewImg = document.getElementById('signatureImage');
+                previewImg.src = signatureData;
+                preview.classList.remove('hidden');
+            }
+        });
+    }
+    
+    function clearSignature() {
+        if (signaturePad) {
+            signaturePad.clear();
+            document.getElementById('signature_data').value = '';
+            document.getElementById('signaturePreview').classList.add('hidden');
+        }
+    }
+    
+    function undoSignature() {
+        if (signaturePad && !signaturePad.isEmpty()) {
+            const data = signaturePad.toData();
+            if (data && data.length > 0) {
+                data.pop();
+                signaturePad.fromData(data);
+                
+                if (signaturePad.isEmpty()) {
+                    document.getElementById('signature_data').value = '';
+                    document.getElementById('signaturePreview').classList.add('hidden');
+                } else {
+                    const signatureData = signaturePad.toDataURL();
+                    document.getElementById('signature_data').value = signatureData;
+                    document.getElementById('signatureImage').src = signatureData;
+                }
+            }
+        }
+    }
+    
+    function saveSignature() {
+        if (signaturePad && !signaturePad.isEmpty()) {
+            const signatureData = signaturePad.toDataURL();
+            document.getElementById('signature_data').value = signatureData;
+            
+            // Show preview
+            const preview = document.getElementById('signaturePreview');
+            const previewImg = document.getElementById('signatureImage');
+            previewImg.src = signatureData;
+            preview.classList.remove('hidden');
+            
+            alert('Signature saved! Please submit the form to complete signing.');
+        } else {
+            alert('Please draw your signature first.');
+        }
+    }
+    
+    // Validate form before submission
+    document.getElementById('agreementForm').addEventListener('submit', function(e) {
+        const signatureData = document.getElementById('signature_data').value;
+        if (!signatureData) {
+            e.preventDefault();
+            alert('Please provide your signature by drawing in the signature pad.');
+        }
+    });
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', initSignaturePad);
+</script>
+{% endblock %}

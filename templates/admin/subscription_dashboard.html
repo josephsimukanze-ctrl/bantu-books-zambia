@@ -1,0 +1,515 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Admin Subscription Dashboard - Bantu Books Zambia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border-color: #059669;
+    }
+    
+    .dashboard-sidebar {
+        background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+        min-height: calc(100vh - 64px);
+    }
+    
+    .nav-item {
+        transition: all 0.2s ease;
+        border-left: 3px solid transparent;
+    }
+    
+    .nav-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-left-color: #10b981;
+    }
+    
+    .nav-item.active {
+        background: rgba(16, 185, 129, 0.2);
+        border-left-color: #10b981;
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .status-pending { background: #fef3c7; color: #d97706; }
+    .status-completed { background: #dcfce7; color: #059669; }
+    .status-failed { background: #fee2e2; color: #dc2626; }
+    .status-cancelled { background: #f3f4f6; color: #6b7280; }
+    .status-processing { background: #dbeafe; color: #2563eb; }
+    
+    .trend-up { color: #059669; }
+    .trend-down { color: #dc2626; }
+    
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-slide {
+        animation: slideIn 0.3s ease-out;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex">
+    <!-- Sidebar -->
+    <div class="w-64 dashboard-sidebar text-white flex-shrink-0">
+        <div class="p-6 border-b border-gray-700">
+            <h2 class="text-xl font-bold">Admin Panel</h2>
+            <p class="text-gray-400 text-sm">Subscription Management</p>
+        </div>
+        <nav class="p-4 space-y-1">
+            <!-- Dashboard -->
+            <a href="{% url 'accounts:admin_subscription_dashboard' %}" class="nav-item active flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white transition">
+                <i class="fas fa-tachometer-alt w-5"></i>
+                <span>Dashboard</span>
+            </a>
+            
+            <!-- Payments -->
+            <a href="{% url 'accounts:admin_subscription_payments' %}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white transition">
+                <i class="fas fa-credit-card w-5"></i>
+                <span>Payments</span>
+                {% if pending_payments %}
+                <span class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5">{{ pending_payments }}</span>
+                {% endif %}
+            </a>
+            
+            <!-- Book Management -->
+            <a href="{% url 'admin:books_book_changelist' %}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white transition">
+                <i class="fas fa-book w-5"></i>
+                <span>Manage Books</span>
+            </a>
+            
+            <!-- Upload Book -->
+            <a href="{% url 'downloads:upload_book' %}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white transition">
+                <i class="fas fa-upload w-5"></i>
+                <span>Upload Book</span>
+            </a>
+            
+            <!-- User Management -->
+            <a href="{% url 'books:manage_users' %}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white transition">
+                <i class="fas fa-users w-5"></i>
+                <span>Manage Users</span>
+            </a>
+            
+            <!-- Categories -->
+            <a href="{% url 'books:manage_categories' %}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white transition">
+                <i class="fas fa-folder-open w-5"></i>
+                <span>Categories</span>
+            </a>
+            
+            <!-- Grade Levels -->
+            <a href="{% url 'books:manage_grades' %}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white transition">
+                <i class="fas fa-graduation-cap w-5"></i>
+                <span>Grade Levels</span>
+            </a>
+            
+            <!-- Languages -->
+            <a href="{% url 'books:manage_languages' %}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white transition">
+                <i class="fas fa-language w-5"></i>
+                <span>Languages</span>
+            </a>
+            
+            <!-- Download Records -->
+            <a href="{% url 'books:manage_downloads' %}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white transition">
+                <i class="fas fa-download w-5"></i>
+                <span>Download Records</span>
+            </a>
+            
+            <!-- User Limits -->
+            <a href="{% url 'books:manage_limits' %}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white transition">
+                <i class="fas fa-chart-line w-5"></i>
+                <span>User Limits</span>
+            </a>
+            
+            <!-- Book Requests -->
+            <a href="{% url 'books:staff_manage_requests' %}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white transition">
+                <i class="fas fa-clipboard-list w-5"></i>
+                <span>Book Requests</span>
+            </a>
+            
+            <!-- Contributor Applications -->
+            <a href="{% url 'books:manage_applications' %}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white transition">
+                <i class="fas fa-file-signature w-5"></i>
+                <span>Contributor Applications</span>
+            </a>
+            
+            <!-- Withdrawal Requests -->
+            <a href="{% url 'books:manage_withdrawals' %}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white transition">
+                <i class="fas fa-money-bill-wave w-5"></i>
+                <span>Withdrawal Requests</span>
+            </a>
+            
+            <div class="border-t border-gray-700 my-2"></div>
+            
+            <!-- Django Admin -->
+            <a href="{% url 'admin:index' %}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white transition">
+                <i class="fas fa-shield-alt w-5 text-orange-400"></i>
+                <span>Django Admin</span>
+                <i class="fas fa-external-link-alt ml-auto text-xs text-gray-500"></i>
+            </a>
+        </nav>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="flex-1 bg-gray-50 min-h-screen">
+        <div class="p-8">
+            <!-- Header with Stats -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">Subscription Dashboard</h1>
+                        <p class="text-gray-600">Manage user subscriptions, payments, and analytics</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="window.location.reload()" class="bg-white text-gray-600 px-4 py-2 rounded-lg shadow-sm hover:bg-gray-50 transition">
+                            <i class="fas fa-sync-alt mr-2"></i> Refresh
+                        </button>
+                        <button onclick="exportData()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+        <i class="fas fa-download mr-2"></i> Export
+    </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="stat-card">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm">Total Revenue</p>
+                            <p class="text-3xl font-bold text-green-600">K{{ total_revenue|floatformat:2|intcomma }}</p>
+                            <p class="text-xs text-gray-400 mt-1">Lifetime earnings</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-chart-line text-green-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm">Total Users</p>
+                            <p class="text-3xl font-bold text-gray-800">{{ total_users|intcomma }}</p>
+                            <p class="text-xs text-green-600 mt-1">
+                                <i class="fas fa-arrow-up"></i> +{{ new_users_today }} today
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-users text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm">Premium Users</p>
+                            <p class="text-3xl font-bold text-gray-800">{{ premium_users|intcomma }}</p>
+                            <p class="text-xs text-gray-500 mt-1">{{ lifetime_users|intcomma }} lifetime</p>
+                        </div>
+                        <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-crown text-yellow-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-500 text-sm">Pending Payments</p>
+                            <p class="text-3xl font-bold text-orange-600">{{ pending_payments|intcomma }}</p>
+                            <p class="text-xs text-gray-400 mt-1">{{ completed_payments|intcomma }} completed</p>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-clock text-orange-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Second Row Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="stat-card">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-download text-2xl text-green-600"></i>
+                        <div>
+                            <p class="text-gray-500 text-sm">Total Downloads</p>
+                            <p class="text-2xl font-bold text-gray-800">{{ total_downloads|intcomma }}</p>
+                            <p class="text-xs text-gray-400">{{ downloads_today|intcomma }} today</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-chart-pie text-2xl text-blue-600"></i>
+                        <div>
+                            <p class="text-gray-500 text-sm">Conversion Rate</p>
+                            <p class="text-2xl font-bold text-gray-800">
+                                {% widthratio premium_users total_users 100 %}%
+                            </p>
+                            <p class="text-xs text-gray-400">Premium / Total</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
+                        <div>
+                            <p class="text-gray-500 text-sm">Expiring Soon</p>
+                            <p class="text-2xl font-bold text-red-600">{{ expiring_soon|intcomma }}</p>
+                            <p class="text-xs text-gray-400">Next 7 days</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-chart-line text-2xl text-purple-600"></i>
+                        <div>
+                            <p class="text-gray-500 text-sm">Growth Rate</p>
+                            <p class="text-2xl font-bold text-purple-600">
+                                {% widthratio new_users_this_week total_users 100 %}%
+                            </p>
+                            <p class="text-xs text-gray-400">This week</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Transactions -->
+            <div class="bg-white rounded-xl shadow-md mb-8 animate-slide">
+                <div class="px-6 py-4 border-b flex justify-between items-center flex-wrap gap-4">
+                    <h3 class="text-lg font-bold text-gray-800">
+                        <i class="fas fa-history text-green-600 mr-2"></i>
+                        Recent Transactions
+                    </h3>
+                    <div class="flex gap-2">
+                        <input type="text" id="searchTransactions" placeholder="Search transactions..." class="px-3 py-1 border rounded-lg text-sm focus:outline-none focus:border-green-500">
+                        <a href="{% url 'accounts:admin_subscription_payments' %}" class="text-sm text-green-600 hover:underline">
+                            View All →
+                        </a>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full" id="transactionsTable">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transaction ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            {% for transaction in recent_transactions %}
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="px-6 py-4 text-sm font-mono">{{ transaction.transaction_id|truncatechars:12 }}</td>
+                                <td class="px-6 py-4">
+                                    <div>
+                                        <p class="font-medium">{{ transaction.user.email|truncatechars:25 }}</p>
+                                        <p class="text-xs text-gray-500">{{ transaction.user.user_type|title }}</p>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 font-semibold text-green-600">K{{ transaction.amount|floatformat:2 }}</td>
+                                <td class="px-6 py-4 capitalize">{{ transaction.plan_type|default:"N/A" }}</td>
+                                <td class="px-6 py-4">
+                                    <span class="status-badge status-{{ transaction.status }}">
+                                        {{ transaction.get_status_display }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-500">{{ transaction.created_at|date:"M d, Y H:i" }}</td>
+                                <td class="px-6 py-4">
+                                    <button onclick="viewTransaction('{{ transaction.transaction_id }}')" class="text-blue-600 hover:text-blue-800 text-sm">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="px-6 py-8 text-center text-gray-500">No transactions found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Pending Payments Alert -->
+            {% if pending_payments > 0 %}
+            <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-8 animate-slide">
+                <div class="flex items-start gap-3 flex-wrap">
+                    <i class="fas fa-bell text-yellow-600 text-xl"></i>
+                    <div class="flex-1">
+                        <p class="font-semibold text-yellow-800">Pending Payments</p>
+                        <p class="text-sm text-yellow-700">There are {{ pending_payments }} pending payment{{ pending_payments|pluralize }} awaiting confirmation.</p>
+                    </div>
+                    <a href="{% url 'accounts:admin_subscription_payments' %}?status=pending" class="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-yellow-700 transition">
+                        Review Now →
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Popular Books & Plan Distribution -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Popular Books -->
+                <div class="bg-white rounded-xl shadow-md">
+                    <div class="px-6 py-4 border-b">
+                        <h3 class="text-lg font-bold text-gray-800">
+                            <i class="fas fa-fire text-orange-500 mr-2"></i>
+                            Most Downloaded Books
+                        </h3>
+                    </div>
+                    <div class="divide-y max-h-96 overflow-y-auto">
+                        {% for book in popular_books %}
+                        <div class="px-6 py-4 hover:bg-gray-50 transition">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="font-medium text-gray-800">{{ book.title|truncatechars:40 }}</p>
+                                    <p class="text-sm text-gray-500">by {{ book.author }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-semibold text-green-600">{{ book.download_count }} downloads</p>
+                                    <p class="text-xs text-gray-400">K{{ book.price|floatformat:2 }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="px-6 py-8 text-center text-gray-500">No books found</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Plan Distribution -->
+                <div class="bg-white rounded-xl shadow-md">
+                    <div class="px-6 py-4 border-b">
+                        <h3 class="text-lg font-bold text-gray-800">
+                            <i class="fas fa-chart-pie text-green-600 mr-2"></i>
+                            Plan Distribution
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Basic Plan</span>
+                                    <span class="font-semibold">{{ basic_users }} ({% widthratio basic_users total_users 100 %}%)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-gray-500 rounded-full h-2" style="width: {% widthratio basic_users total_users 100 %}%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Premium Plan</span>
+                                    <span class="font-semibold">{{ premium_users }} ({% widthratio premium_users total_users 100 %}%)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-yellow-500 rounded-full h-2" style="width: {% widthratio premium_users total_users 100 %}%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Lifetime Plan</span>
+                                    <span class="font-semibold">{{ lifetime_users }} ({% widthratio lifetime_users total_users 100 %}%)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-500 rounded-full h-2" style="width: {% widthratio lifetime_users total_users 100 %}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 pt-4 border-t">
+                            <div class="grid grid-cols-3 gap-3 text-center">
+                                <div class="p-3 bg-gray-50 rounded-lg">
+                                    <p class="text-2xl font-bold text-gray-800">{{ total_users }}</p>
+                                    <p class="text-xs text-gray-500">Total Users</p>
+                                </div>
+                                <div class="p-3 bg-gray-50 rounded-lg">
+                                    <p class="text-2xl font-bold text-green-600">{{ premium_users|add:lifetime_users }}</p>
+                                    <p class="text-xs text-gray-500">Premium Total</p>
+                                </div>
+                                <div class="p-3 bg-gray-50 rounded-lg">
+                                    <p class="text-2xl font-bold text-blue-600">{{ new_users_this_week }}</p>
+                                    <p class="text-xs text-gray-500">New This Week</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Search functionality for transactions
+    document.getElementById('searchTransactions')?.addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase();
+        const tableRows = document.querySelectorAll('#transactionsTable tbody tr');
+        
+        tableRows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            if (text.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+    
+    function viewTransaction(transactionId) {
+        alert(`Viewing transaction: ${transactionId}\n\nFull transaction details would be shown here.`);
+    }
+    
+   function exportData() {
+    // Show export options modal or popup
+    const format = prompt('Select export format:\n1 - CSV\n2 - Excel\n3 - PDF', '2');
+    
+    let formatType = 'excel';
+    if (format === '1') formatType = 'csv';
+    else if (format === '2') formatType = 'excel';
+    else if (format === '3') formatType = 'pdf';
+    else return;
+    
+    const dateRange = prompt('Select date range:\n1 - All\n2 - Today\n3 - This Week\n4 - This Month\n5 - This Year', '1');
+    
+    let range = 'all';
+    if (dateRange === '2') range = 'today';
+    else if (dateRange === '3') range = 'week';
+    else if (dateRange === '4') range = 'month';
+    else if (dateRange === '5') range = 'year';
+    
+    window.location.href = `{% url 'accounts:export_subscription_data' %}?format=${formatType}&date_range=${range}`;
+}
+    
+    // Auto-refresh pending payments count every 30 seconds
+    setTimeout(() => {
+        location.reload();
+    }, 30000);
+</script>
+{% endblock %}

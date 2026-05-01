@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Manage Users - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+    .user-card {
+        transition: all 0.3s ease;
+    }
+    .user-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .status-active {
+        background-color: #d1fae5;
+        color: #059669;
+    }
+    .status-inactive {
+        background-color: #fee2e2;
+        color: #dc2626;
+    }
+    .role-badge {
+        background-color: #e0e7ff;
+        color: #4338ca;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Manage Users</h1>
+            <p class="text-gray-600">View and manage all registered users</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'admin:accounts_user_add' %}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+                <i class="fas fa-user-plus mr-2"></i> Add New User
+            </a>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-md p-4 text-center">
+            <div class="text-2xl font-bold text-gray-800">{{ total_users }}</div>
+            <p class="text-gray-500 text-sm">Total Users</p>
+        </div>
+        <div class="bg-green-50 rounded-xl shadow-md p-4 text-center">
+            <div class="text-2xl font-bold text-green-600">{{ active_users }}</div>
+            <p class="text-gray-500 text-sm">Active</p>
+        </div>
+        <div class="bg-orange-50 rounded-xl shadow-md p-4 text-center">
+            <div class="text-2xl font-bold text-orange-600">{{ premium_users }}</div>
+            <p class="text-gray-500 text-sm">Premium</p>
+        </div>
+        <div class="bg-purple-50 rounded-xl shadow-md p-4 text-center">
+            <div class="text-2xl font-bold text-purple-600">{{ lifetime_users }}</div>
+            <p class="text-gray-500 text-sm">Lifetime</p>
+        </div>
+        <div class="bg-blue-50 rounded-xl shadow-md p-4 text-center">
+            <div class="text-2xl font-bold text-blue-600">{{ staff_users }}</div>
+            <p class="text-gray-500 text-sm">Staff</p>
+        </div>
+    </div>
+    
+    <!-- Search and Filter -->
+    <div class="bg-white rounded-xl shadow-md p-4 mb-6">
+        <div class="flex flex-wrap gap-4">
+            <div class="flex-1 min-w-[200px]">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    <input type="text" id="searchInput" placeholder="Search by name, email or username..." 
+                           class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                </div>
+            </div>
+            <select id="filterRole" class="px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                <option value="all">All Roles</option>
+                <option value="basic">Basic</option>
+                <option value="premium">Premium</option>
+                <option value="lifetime">Lifetime</option>
+                <option value="staff">Staff</option>
+            </select>
+            <select id="filterStatus" class="px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+            <button onclick="clearFilters()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition">
+                <i class="fas fa-eraser mr-2"></i> Clear
+            </button>
+        </div>
+    </div>
+    
+    <!-- Users Table -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Downloads</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="usersTableBody">
+                    {% for user in users %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center">
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" class="w-8 h-8 rounded-full object-cover mr-3">
+                                {% else %}
+                                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                        <span class="text-green-600 font-semibold">{{ user.username|first|upper }}</span>
+                                    </div>
+                                {% endif %}
+                                <div>
+                                    <p class="font-semibold text-gray-800">{{ user.get_full_name|default:user.username }}</p>
+                                    <p class="text-xs text-gray-500">@{{ user.username }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-gray-600">{{ user.email }}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded text-xs font-semibold 
+                                {% if user.user_type == 'premium' %}bg-orange-100 text-orange-700
+                                {% elif user.user_type == 'lifetime' %}bg-purple-100 text-purple-700
+                                {% elif user.is_staff %}bg-blue-100 text-blue-700
+                                {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                {{ user.get_user_type_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-gray-600">{{ user.total_downloads }}</td>
+                        <td class="px-6 py-4 text-gray-600">{{ user.date_joined|date:"M d, Y" }}</td>
+                        <td class="px-6 py-4">
+                            {% if user.is_active %}
+                                <span class="status-badge status-active"><i class="fas fa-check-circle mr-1"></i> Active</span>
+                            {% else %}
+                                <span class="status-badge status-inactive"><i class="fas fa-times-circle mr-1"></i> Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex gap-2">
+                                <a href="{% url 'admin:accounts_user_change' user.id %}" class="text-blue-600 hover:text-blue-700" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'admin:accounts_user_delete' user.id %}" class="text-red-600 hover:text-red-700" title="Delete" onclick="return confirm('Delete this user?')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                                <button onclick="toggleUserStatus({{ user.id }})" class="text-green-600 hover:text-green-700" title="Toggle Status">
+                                    <i class="fas fa-toggle-on"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- Pagination -->
+        {% if users.has_other_pages %}
+        <div class="border-t px-6 py-4 flex justify-between items-center">
+            <span class="text-sm text-gray-500">Showing {{ users.start_index }} to {{ users.end_index }} of {{ users.paginator.count }} users</span>
+            <div class="flex gap-2">
+                {% if users.has_previous %}
+                <a href="?page={{ users.previous_page_number }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">&laquo;</a>
+                {% endif %}
+                <span class="px-3 py-1 bg-green-600 text-white rounded">{{ users.number }}</span>
+                {% if users.has_next %}
+                <a href="?page={{ users.next_page_number }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">&raquo;</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    const searchInput = document.getElementById('searchInput');
+    const filterRole = document.getElementById('filterRole');
+    const filterStatus = document.getElementById('filterStatus');
+    
+    function filterUsers() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const role = filterRole.value;
+        const status = filterStatus.value;
+        const rows = document.querySelectorAll('#usersTableBody tr');
+        
+        rows.forEach(row => {
+            const name = row.cells[0]?.innerText.toLowerCase() || '';
+            const email = row.cells[1]?.innerText.toLowerCase() || '';
+            const userRole = row.cells[2]?.innerText.toLowerCase() || '';
+            const userStatus = row.cells[5]?.innerText.toLowerCase() || '';
+            
+            let show = true;
+            if (searchTerm && !name.includes(searchTerm) && !email.includes(searchTerm)) show = false;
+            if (role !== 'all' && !userRole.includes(role)) show = false;
+            if (status !== 'all' && !userStatus.includes(status)) show = false;
+            
+            row.style.display = show ? '' : 'none';
+        });
+    }
+    
+    function clearFilters() {
+        searchInput.value = '';
+        filterRole.value = 'all';
+        filterStatus.value = 'all';
+        filterUsers();
+    }
+    
+    searchInput.addEventListener('keyup', filterUsers);
+    filterRole.addEventListener('change', filterUsers);
+    filterStatus.addEventListener('change', filterUsers);
+    
+    function toggleUserStatus(userId) {
+        if (confirm('Toggle user status?')) {
+            fetch(`/admin/users/toggle-status/${userId}/`, { method: 'POST' })
+                .then(() => location.reload());
+        }
+    }
+</script>
+{% endblock %}

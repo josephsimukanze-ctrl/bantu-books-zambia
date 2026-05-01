@@ -1,0 +1,465 @@
+<!-- ai_assistant/templates/ai_assistant/chat.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Study Assistant - Bantu Books Zambia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        background: linear-gradient(135deg, #f5f7fa 0%, #f3f4f6 100%);
+    }
+    
+    .message-bubble {
+        transition: all 0.3s ease;
+    }
+    
+    .message-bubble:hover {
+        transform: translateX(2px);
+    }
+    
+    .typing-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .typing-indicator span {
+        width: 8px;
+        height: 8px;
+        background-color: #9ca3af;
+        border-radius: 50%;
+        animation: typing 1.4s infinite;
+    }
+    
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    
+    @keyframes typing {
+        0%, 60%, 100% {
+            transform: translateY(0);
+            opacity: 0.4;
+        }
+        30% {
+            transform: translateY(-10px);
+            opacity: 1;
+        }
+    }
+    
+    .suggestion-chip {
+        transition: all 0.2s ease;
+    }
+    
+    .suggestion-chip:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .ai-status {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.7;
+        }
+    }
+    
+    /* Custom scrollbar for chat */
+    #chatMessages::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    #chatMessages::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    #chatMessages::-webkit-scrollbar-thumb {
+        background: #c7d2fe;
+        border-radius: 10px;
+    }
+    
+    #chatMessages::-webkit-scrollbar-thumb:hover {
+        background: #818cf8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container min-h-screen py-8">
+    <div class="container mx-auto px-4">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header Card -->
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
+                <div class="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 px-6 py-6">
+                    <div class="flex justify-between items-center flex-wrap gap-4">
+                        <div>
+                            <div class="flex items-center gap-3">
+                                <div class="bg-white bg-opacity-20 rounded-full p-3">
+                                    <i class="fas fa-robot text-3xl text-white"></i>
+                                </div>
+                                <div>
+                                    <h1 class="text-2xl font-bold text-white">Bantu AI Assistant</h1>
+                                    <p class="text-purple-100 text-sm">Your intelligent study companion for Zambian students</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            {% if ai_available %}
+                            <span class="bg-green-500 text-white px-3 py-1 rounded-full text-xs flex items-center gap-1 ai-status">
+                                <i class="fas fa-circle text-xs"></i> Free AI Active
+                            </span>
+                            {% else %}
+                            <span class="bg-yellow-500 text-white px-3 py-1 rounded-full text-xs flex items-center gap-1">
+                                <i class="fas fa-clock"></i> Offline Mode
+                            </span>
+                            {% endif %}
+                            <button onclick="clearChat()" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-1 rounded-lg text-sm transition">
+                                <i class="fas fa-trash-alt mr-1"></i> Clear Chat
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Stats Bar -->
+                <div class="bg-gray-50 px-6 py-3 border-b flex justify-between items-center text-sm">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-comments text-purple-500"></i>
+                            <span id="messageCount">0</span> messages
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-clock text-purple-500"></i>
+                            <span id="sessionTime">0:00</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-chart-line text-green-500"></i>
+                        <span id="remainingCount">{{ remaining|default:100 }}</span> questions left today
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chat Messages Area -->
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
+                <div id="chatMessages" class="h-96 overflow-y-auto p-6 space-y-4">
+                    <!-- Welcome Message -->
+                    <div class="flex justify-start animate-fade-in">
+                        <div class="bg-gradient-to-r from-purple-100 to-indigo-100 rounded-2xl rounded-tl-none px-5 py-3 max-w-[85%] shadow-sm">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fas fa-robot text-purple-600"></i>
+                                <span class="font-semibold text-purple-800 text-sm">Bantu AI</span>
+                            </div>
+                            <p class="text-gray-700 text-sm">👋 Hi! I'm Bantu AI, your free study assistant powered by Google Gemini.</p>
+                            <p class="text-gray-700 text-sm mt-2">I can help you with:</p>
+                            <div class="grid grid-cols-2 gap-2 mt-2">
+                                <div class="flex items-center gap-2 text-xs text-gray-600">
+                                    <i class="fas fa-graduation-cap text-purple-500"></i> ECZ exam prep
+                                </div>
+                                <div class="flex items-center gap-2 text-xs text-gray-600">
+                                    <i class="fas fa-lightbulb text-yellow-500"></i> Study techniques
+                                </div>
+                                <div class="flex items-center gap-2 text-xs text-gray-600">
+                                    <i class="fas fa-book text-green-500"></i> Book recommendations
+                                </div>
+                                <div class="flex items-center gap-2 text-xs text-gray-600">
+                                    <i class="fas fa-language text-blue-500"></i> Word definitions
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-3">
+                                <i class="fas fa-shield-alt mr-1"></i> 
+                                {{ remaining|default:100 }} free questions remaining today
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Input Area -->
+                <div class="border-t p-4 bg-gray-50">
+                    <div class="flex gap-3">
+                        <div class="flex-1 relative">
+                            <textarea id="questionInput" 
+                                      rows="1"
+                                      placeholder="Ask me anything about studying, exams, or books..." 
+                                      class="w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 resize-none"
+                                      style="max-height: 120px;"></textarea>
+                            <button onclick="sendQuestion()" 
+                                    class="absolute right-2 bottom-2 bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-2">
+                        <p class="text-xs text-gray-500">
+                            <i class="fas fa-info-circle mr-1"></i> 
+                            Press <kbd class="px-1 py-0.5 bg-gray-200 rounded text-xs">Enter</kbd> to send, 
+                            <kbd class="px-1 py-0.5 bg-gray-200 rounded text-xs">Shift+Enter</kbd> for new line
+                        </p>
+                        <p class="text-xs text-purple-600">
+                            <i class="fas fa-robot mr-1"></i> Powered by Google Gemini AI
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Suggested Questions -->
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                <div class="px-6 py-4 border-b bg-gradient-to-r from-gray-50 to-white">
+                    <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <i class="fas fa-lightbulb text-yellow-500"></i>
+                        Suggested Questions
+                    </h3>
+                </div>
+                <div class="p-4">
+                    <div class="flex flex-wrap gap-2" id="suggestionsList">
+                        <!-- Suggestions will be loaded here -->
+                        <div class="animate-pulse flex gap-2">
+                            <div class="h-8 w-24 bg-gray-200 rounded-full"></div>
+                            <div class="h-8 w-32 bg-gray-200 rounded-full"></div>
+                            <div class="h-8 w-28 bg-gray-200 rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tips Card -->
+            <div class="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-100">
+                <div class="flex items-start gap-3">
+                    <div class="bg-blue-100 rounded-full p-2">
+                        <i class="fas fa-lightbulb text-blue-600"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-blue-800">💡 Pro Tips</p>
+                        <p class="text-xs text-blue-700 mt-1">Ask specific questions for better answers! Examples:</p>
+                        <ul class="text-xs text-blue-600 mt-2 space-y-1">
+                            <li>• "What topics are covered in ECZ Grade 12 Mathematics?"</li>
+                            <li>• "Explain the water cycle in simple terms"</li>
+                            <li>• "How do I prepare for Science practical exams?"</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const chatMessages = document.getElementById('chatMessages');
+    const questionInput = document.getElementById('questionInput');
+    let messageCount = 0;
+    let sessionStartTime = Date.now();
+    let remainingQuestions = {{ remaining|default:100 }};
+    
+    // Update session time
+    function updateSessionTime() {
+        const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        document.getElementById('sessionTime').innerText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+    setInterval(updateSessionTime, 1000);
+    
+    function updateMessageCount() {
+        document.getElementById('messageCount').innerText = messageCount;
+    }
+    
+    function updateRemainingCount(remaining) {
+        remainingQuestions = remaining;
+        document.getElementById('remainingCount').innerText = remaining;
+    }
+    
+    function addMessage(text, isUser) {
+        const div = document.createElement('div');
+        div.className = `flex ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in message-bubble`;
+        
+        if (isUser) {
+            div.innerHTML = `
+                <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl rounded-tr-none px-5 py-3 max-w-[85%] shadow-md">
+                    <p class="text-sm whitespace-pre-wrap">${escapeHtml(text)}</p>
+                </div>
+            `;
+        } else {
+            div.innerHTML = `
+                <div class="bg-gray-100 rounded-2xl rounded-tl-none px-5 py-3 max-w-[85%] shadow-sm">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-robot text-purple-600"></i>
+                        <span class="font-semibold text-purple-800 text-sm">Bantu AI</span>
+                    </div>
+                    <p class="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed">${escapeHtml(text)}</p>
+                </div>
+            `;
+        }
+        
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        messageCount++;
+        updateMessageCount();
+    }
+    
+    function showTyping() {
+        const div = document.createElement('div');
+        div.id = 'typingIndicator';
+        div.className = 'flex justify-start animate-fade-in';
+        div.innerHTML = `
+            <div class="bg-gray-100 rounded-2xl rounded-tl-none px-5 py-3">
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Bantu AI is thinking...</p>
+            </div>
+        `;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function removeTyping() {
+        const typing = document.getElementById('typingIndicator');
+        if (typing) typing.remove();
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function adjustTextareaHeight() {
+        questionInput.style.height = 'auto';
+        questionInput.style.height = Math.min(questionInput.scrollHeight, 120) + 'px';
+    }
+    
+    async function sendQuestion() {
+        const question = questionInput.value.trim();
+        if (!question) return;
+        
+        if (remainingQuestions <= 0) {
+            addMessage("⚠️ You've reached your daily limit of 100 questions. Please try again tomorrow!", false);
+            return;
+        }
+        
+        addMessage(question, true);
+        questionInput.value = '';
+        adjustTextareaHeight();
+        showTyping();
+        
+        try {
+            const response = await fetch('/ai-assistant/api/chat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ question: question })
+            });
+            
+            const data = await response.json();
+            removeTyping();
+            
+            if (data.success) {
+                addMessage(data.answer, false);
+                if (data.remaining !== undefined) {
+                    updateRemainingCount(data.remaining);
+                }
+            } else if (data.limit_reached) {
+                addMessage("⚠️ Daily limit reached! You've used all 100 free questions. Please try again tomorrow.", false);
+            } else {
+                addMessage("Sorry, I encountered an error. Please try again.", false);
+            }
+        } catch (error) {
+            removeTyping();
+            addMessage("Network error. Please check your connection and try again.", false);
+        }
+    }
+    
+    function clearChat() {
+        if (confirm('Clear all chat messages?')) {
+            const welcomeMessage = chatMessages.querySelector('.flex.justify-start');
+            chatMessages.innerHTML = '';
+            if (welcomeMessage) {
+                chatMessages.appendChild(welcomeMessage);
+            }
+            messageCount = 0;
+            updateMessageCount();
+        }
+    }
+    
+    function askQuick(question) {
+        questionInput.value = question;
+        adjustTextareaHeight();
+        sendQuestion();
+    }
+    
+    function getCookie(name) {
+        let value = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + '=')) {
+                    value = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return value;
+    }
+    
+    // Auto-resize textarea
+    questionInput.addEventListener('input', adjustTextareaHeight);
+    
+    // Handle Enter key
+    questionInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendQuestion();
+        }
+    });
+    
+    // Load suggestions
+    fetch('/ai-assistant/api/suggestions/')
+        .then(r => r.json())
+        .then(data => {
+            const container = document.getElementById('suggestionsList');
+            if (container && data.suggestions) {
+                container.innerHTML = data.suggestions.map(s => 
+                    `<button onclick="askQuick('${escapeHtml(s)}')" class="suggestion-chip text-xs bg-gray-100 hover:bg-purple-100 text-gray-700 hover:text-purple-700 px-3 py-1.5 rounded-full transition">
+                        ${escapeHtml(s)}
+                    </button>`
+                ).join('');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading suggestions:', error);
+        });
+    
+    // Add fade-in animation style
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.3s ease-out;
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+{% endblock %}

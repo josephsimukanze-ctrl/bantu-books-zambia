@@ -1,0 +1,212 @@
+{% load static %}
+
+<!-- Sidebar Content - No toggle button here, just content -->
+<div class="p-4">
+    <!-- Current Category Info -->
+    {% if current_category %}
+    <div class="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
+        <div class="flex items-center gap-2 mb-1">
+            <i class="fas fa-folder-open text-green-600"></i>
+            <span class="font-semibold text-gray-800 text-sm">Current Category:</span>
+        </div>
+        <div class="text-green-700 font-medium text-sm">{{ current_category.name }}</div>
+        <a href="{% url 'books:book_list' %}" class="text-xs text-green-600 hover:text-green-700 mt-1 inline-block">
+            <i class="fas fa-times-circle mr-1"></i> Clear
+        </a>
+    </div>
+    {% endif %}
+    <button class="close-sidebar" onclick="closeSidebar()">
+    <i class="fas fa-times"></i>
+</button>
+    <!-- Browse Categories -->
+    <div class="mb-4">
+        <h3 class="text-md font-bold text-gray-800 mb-2 pb-1 border-b border-green-600">
+            Browse Categories
+        </h3>
+        <div class="space-y-1 max-h-60 overflow-y-auto">
+            <a href="{% url 'books:book_list' %}" class="filter-link text-sm {% if not current_category %}active{% endif %}">
+                <i class="fas fa-book w-4"></i>
+                <span>All Books</span>
+                {% if total_books_count %}
+                <span class="ml-auto text-xs text-gray-400">{{ total_books_count }}</span>
+                {% endif %}
+            </a>
+            {% for category in categories %}
+            <a href="{% url 'books:book_list' %}?category={{ category.slug }}" 
+               class="filter-link text-sm {% if current_category and current_category.slug == category.slug %}active{% endif %}">
+                <i class="fas fa-{{ category.icon|default:'book' }} w-4"></i>
+                <span class="truncate">{{ category.name }}</span>
+                {% if category.book_count %}
+                <span class="ml-auto text-xs text-gray-400">{{ category.book_count }}</span>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Filter by Grade -->
+    <div class="mb-4">
+        <h3 class="text-md font-bold text-gray-800 mb-2 pb-1 border-b border-green-600">
+            Filter by Grade
+        </h3>
+        <div class="space-y-1 max-h-40 overflow-y-auto">
+            {% for grade in grade_levels %}
+            <label class="filter-checkbox text-sm">
+                <input type="checkbox" class="grade-checkbox" value="{{ grade.slug }}"
+                       {% if grade.slug in selected_grades %}checked{% endif %}>
+                <span class="ml-2 text-gray-700">{{ grade.name }}</span>
+                {% if grade.book_count %}
+                <span class="ml-auto text-xs text-gray-400">{{ grade.book_count }}</span>
+                {% endif %}
+            </label>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Filter by Language -->
+    <div class="mb-4">
+        <h3 class="text-md font-bold text-gray-800 mb-2 pb-1 border-b border-green-600">
+            Filter by Language
+        </h3>
+        <div class="space-y-1 max-h-40 overflow-y-auto">
+            {% for lang in languages %}
+            <label class="filter-checkbox text-sm">
+                <input type="checkbox" class="language-checkbox" value="{{ lang.code }}"
+                       {% if lang.code in selected_languages %}checked{% endif %}>
+                <span class="ml-2 text-gray-700">{{ lang.name }}</span>
+                {% if lang.book_count %}
+                <span class="ml-auto text-xs text-gray-400">{{ lang.book_count }}</span>
+                {% endif %}
+            </label>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Price Range -->
+    <div class="mb-4">
+        <h3 class="text-md font-bold text-gray-800 mb-2 pb-1 border-b border-green-600">
+            Price Range
+        </h3>
+        <div class="space-y-1">
+            <label class="filter-radio text-sm">
+                <input type="radio" name="price" value="free" class="price-radio"
+                       {% if selected_price == 'free' %}checked{% endif %}>
+                <span class="ml-2 text-gray-700">Free Only</span>
+            </label>
+            <label class="filter-radio text-sm">
+                <input type="radio" name="price" value="paid" class="price-radio"
+                       {% if selected_price == 'paid' %}checked{% endif %}>
+                <span class="ml-2 text-gray-700">Paid Only</span>
+            </label>
+            <label class="filter-radio text-sm">
+                <input type="radio" name="price" value="all" class="price-radio"
+                       {% if selected_price == 'all' or not selected_price %}checked{% endif %}>
+                <span class="ml-2 text-gray-700">All Books</span>
+            </label>
+        </div>
+        <div class="flex gap-2 mt-3">
+            <button onclick="applyFilters()" class="flex-1 bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition text-sm">
+                Apply
+            </button>
+            <button onclick="clearFilters()" class="flex-1 bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-300 transition text-sm">
+                Clear
+            </button>
+        </div>
+    </div>
+    
+    <!-- Upgrade Banner -->
+    <div class="mt-4 p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
+        <div class="flex items-start gap-2">
+            <i class="fas fa-crown text-xl text-orange-500"></i>
+            <div class="flex-1">
+                <h4 class="font-bold text-gray-800 text-sm">Upgrade to Premium!</h4>
+                <p class="text-xs text-gray-600 mb-2">Unlimited downloads</p>
+                <a href="{% url 'accounts:upgrade' %}" class="block text-center bg-orange-500 text-white px-2 py-1 rounded-lg hover:bg-orange-600 transition text-xs">
+                    Upgrade
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .filter-link {
+        display: flex;
+        align-items: center;
+        padding: 0.4rem 0.6rem;
+        color: #4b5563;
+        border-radius: 0.375rem;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        gap: 0.5rem;
+    }
+    
+    .filter-link:hover {
+        background-color: #f3f4f6;
+        color: #059669;
+    }
+    
+    .filter-link.active {
+        background: #059669;
+        color: white;
+    }
+    
+    .filter-checkbox, .filter-radio {
+        display: flex;
+        align-items: center;
+        padding: 0.3rem 0.5rem;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .filter-checkbox:hover, .filter-radio:hover {
+        background-color: #f9fafb;
+    }
+    
+    .form-checkbox, .form-radio {
+        width: 0.875rem;
+        height: 0.875rem;
+        cursor: pointer;
+    }
+    
+    .max-h-60 {
+        max-height: 15rem;
+    }
+    
+    .max-h-40 {
+        max-height: 10rem;
+    }
+</style>
+
+<script>
+    function applyFilters() {
+        const selectedGrades = Array.from(document.querySelectorAll('.grade-checkbox:checked')).map(cb => cb.value);
+        const selectedLanguages = Array.from(document.querySelectorAll('.language-checkbox:checked')).map(cb => cb.value);
+        const selectedPrice = document.querySelector('.price-radio:checked')?.value;
+        
+        const url = new URL(window.location.href);
+        if (selectedGrades.length) url.searchParams.set('grades', selectedGrades.join(','));
+        else url.searchParams.delete('grades');
+        
+        if (selectedLanguages.length) url.searchParams.set('languages', selectedLanguages.join(','));
+        else url.searchParams.delete('languages');
+        
+        if (selectedPrice && selectedPrice !== 'all') url.searchParams.set('price', selectedPrice);
+        else url.searchParams.delete('price');
+        
+        window.location.href = url.toString();
+    }
+    
+    function clearFilters() {
+        document.querySelectorAll('.grade-checkbox, .language-checkbox').forEach(cb => cb.checked = false);
+        const allRadio = document.querySelector('.price-radio[value="all"]');
+        if (allRadio) allRadio.checked = true;
+        
+        const url = new URL(window.location.href);
+        url.searchParams.delete('grades');
+        url.searchParams.delete('languages');
+        url.searchParams.delete('price');
+        window.location.href = url.toString();
+    }
+</script>

@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home - Bantu Books Zambia{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+    <!-- Mobile Filter Toggle Button - Only visible on mobile -->
+   <!-- Mobile Filter Button -->
+<button id="mobileFilterBtn" class="lg:hidden fixed bottom-4 right-4 z-50 bg-green-600 text-white p-3 rounded-full shadow-lg">
+    <i id="filterIcon" class="fas fa-filter"></i>
+</button>
+
+    <!-- Hero Section -->
+    <div class="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl text-white mb-12 overflow-hidden shadow-xl relative">
+        <div class="absolute top-0 right-0 opacity-10">
+            <i class="fas fa-book-open text-9xl"></i>
+        </div>
+        <div class="absolute bottom-0 left-0 opacity-10">
+            <i class="fas fa-graduation-cap text-9xl"></i>
+        </div>
+        <div class="px-6 py-16 md:py-20 text-center relative z-10">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">Bantu Books Zambia</h1>
+            <p class="text-xl md:text-2xl mb-6 font-light">Akufuna kuŵelenga? Tili nanu.</p>
+            <p class="text-lg mb-8 max-w-2xl mx-auto opacity-90">Your gateway to quality Zambian educational materials, novels, and resources</p>
+            
+            <div class="flex justify-center gap-4 flex-wrap">
+                <a href="{% url 'books:book_list' %}" class="bg-white text-green-700 px-8 py-3 rounded-lg font-bold hover:bg-gray-100 hover:scale-105 transition transform inline-block shadow-lg">
+                    <i class="fas fa-book-open mr-2"></i> Browse Books
+                </a>
+                {% if not user.is_authenticated %}
+                    <a href="{% url 'accounts:register' %}" class="bg-orange-500 text-white px-8 py-3 rounded-lg font-bold hover:bg-orange-600 hover:scale-105 transition transform inline-block shadow-lg">
+                        <i class="fas fa-user-plus mr-2"></i> Join Free
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    
+        
+        <!-- Main Content Area -->
+        <div class="lg:col-span-3">
+            <!-- Stats Section - REAL DATA from database -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+                <div class="bg-white rounded-xl p-6 text-center shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group">
+                    <div class="text-3xl font-bold text-green-600 mb-2 group-hover:scale-110 transition">
+                        {{ total_books }}+
+                    </div>
+                    <p class="text-gray-600 text-sm">Books Available</p>
+                    <div class="mt-2 h-1 bg-green-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-green-600 rounded-full" style="width: {{ total_books|default:0 }}%"></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-6 text-center shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group">
+                    <div class="text-3xl font-bold text-green-600 mb-2 group-hover:scale-110 transition">
+                        {{ total_users }}+
+                    </div>
+                    <p class="text-gray-600 text-sm">Active Users</p>
+                    <div class="mt-2 h-1 bg-green-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-green-600 rounded-full" style="width: {{ total_users|default:0 }}%"></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-6 text-center shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group">
+                    <div class="text-3xl font-bold text-green-600 mb-2 group-hover:scale-110 transition">
+                        {{ total_authors }}+
+                    </div>
+                    <p class="text-gray-600 text-sm">Zambian Authors</p>
+                    <div class="mt-2 h-1 bg-green-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-green-600 rounded-full" style="width: {{ total_authors|default:0 }}%"></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-6 text-center shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group">
+                    <div class="text-3xl font-bold text-green-600 mb-2 group-hover:scale-110 transition">
+                        {{ total_languages }}+
+                    </div>
+                    <p class="text-gray-600 text-sm">Local Languages</p>
+                    <div class="mt-2 h-1 bg-green-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-green-600 rounded-full" style="width: {{ total_languages|default:0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Features Section -->
+            <div class="mb-12">
+                <h2 class="section-title">What We Offer</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                    <div class="bg-white rounded-xl p-6 text-center shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group">
+                        <div class="text-5xl text-green-600 mb-4 group-hover:scale-110 transition">📚</div>
+                        <h3 class="text-xl font-bold mb-2">Educational Resources</h3>
+                        <p class="text-gray-600 text-sm">ECZ past papers, university materials, and vocational training resources</p>
+                        <div class="mt-4 opacity-0 group-hover:opacity-100 transition">
+                            <a href="{% url 'books:book_list' %}" class="text-green-600 text-sm font-semibold">Explore →</a>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl p-6 text-center shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group">
+                        <div class="text-5xl text-green-600 mb-4 group-hover:scale-110 transition">📖</div>
+                        <h3 class="text-xl font-bold mb-2">Zambian Literature</h3>
+                        <p class="text-gray-600 text-sm">Novels, poetry, and stories by Zambian authors</p>
+                        <div class="mt-4 opacity-0 group-hover:opacity-100 transition">
+                            <a href="{% url 'books:book_list' %}" class="text-green-600 text-sm font-semibold">Explore →</a>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl p-6 text-center shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group">
+                        <div class="text-5xl text-green-600 mb-4 group-hover:scale-110 transition">🌍</div>
+                        <h3 class="text-xl font-bold mb-2">Local Languages</h3>
+                        <p class="text-gray-600 text-sm">Books in Bemba, Nyanja, Tonga, Lozi, and more</p>
+                        <div class="mt-4 opacity-0 group-hover:opacity-100 transition">
+                            <a href="{% url 'books:book_list' %}" class="text-green-600 text-sm font-semibold">Explore →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Books Section - REAL DATA -->
+            {% if recent_books %}
+            <div class="mb-12">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="section-title mb-0">Recent Additions</h2>
+                    <a href="{% url 'books:book_list' %}" class="text-green-600 hover:text-green-700 font-semibold transition hover:scale-105">
+                        View All <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {% for book in recent_books %}
+                    <div class="card group">
+                        <a href="{% url 'books:book_detail' book.slug %}">
+                            <div class="relative overflow-hidden">
+                                {% if book.cover_image %}
+                                    <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="w-full h-40 object-cover group-hover:scale-105 transition">
+                                {% else %}
+                                    <div class="w-full h-40 bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+                                        <i class="fas fa-book text-4xl text-green-600"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="absolute top-2 right-2">
+                                    {% if book.is_free %}
+                                        <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">FREE</span>
+                                    {% else %}
+                                        <span class="bg-orange-500 text-white px-2 py-1 rounded text-xs font-bold">K{{ book.price }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="p-3">
+                                <h3 class="font-bold text-md mb-1 line-clamp-1">{{ book.title }}</h3>
+                                <p class="text-gray-600 text-xs mb-2">{{ book.author }}</p>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-400 text-xs">
+                                        <i class="fas fa-download mr-1"></i> {{ book.downloads_count }}
+                                    </span>
+                                    <span class="text-green-600 text-sm font-semibold">View →</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Free Books Section - REAL DATA -->
+            {% if free_books %}
+            <div class="mb-12">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="section-title mb-0">Free Books</h2>
+                    <a href="{% url 'books:book_list' %}?price=free" class="text-green-600 hover:text-green-700 font-semibold transition hover:scale-105">
+                        View All Free Books <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {% for book in free_books %}
+                    <div class="card group">
+                        <a href="{% url 'books:book_detail' book.slug %}">
+                            <div class="relative overflow-hidden">
+                                {% if book.cover_image %}
+                                    <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="w-full h-40 object-cover group-hover:scale-105 transition">
+                                {% else %}
+                                    <div class="w-full h-40 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                                        <i class="fas fa-book text-4xl text-blue-600"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
+                                    FREE
+                                </div>
+                            </div>
+                            <div class="p-3">
+                                <h3 class="font-bold text-md mb-1 line-clamp-1">{{ book.title }}</h3>
+                                <p class="text-gray-600 text-xs mb-2">{{ book.author }}</p>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-400 text-xs">
+                                        <i class="fas fa-eye mr-1"></i> {{ book.views_count }}
+                                    </span>
+                                    <span class="text-green-600 text-sm font-semibold">View →</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Newsletter Signup -->
+            <div class="mb-12 bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-envelope-open-text text-3xl text-green-600"></i>
+                        <div>
+                            <h3 class="font-bold text-gray-800">Stay Updated!</h3>
+                            <p class="text-sm text-gray-600">Get the latest books and offers in your inbox</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                        <input type="email" placeholder="Enter your email" class="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-green-500">
+                        <button class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition font-semibold">
+                            Subscribe <i class="fas fa-paper-plane ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CTA Section -->
+    <div class="bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-2xl overflow-hidden shadow-xl mt-12">
+        <div class="px-8 py-12 text-center relative">
+            <div class="absolute top-0 right-0 opacity-5">
+                <i class="fas fa-graduation-cap text-8xl"></i>
+            </div>
+            <div class="relative z-10">
+                <h2 class="text-3xl font-bold mb-4">Ready to Start Learning?</h2>
+                <p class="text-xl mb-8 opacity-90">Join thousands of Zambian students and readers today</p>
+                <div class="flex justify-center gap-4 flex-wrap">
+                    {% if not user.is_authenticated %}
+                        <a href="{% url 'accounts:register' %}" class="bg-orange-500 text-white px-8 py-3 rounded-lg font-bold hover:bg-orange-600 hover:scale-105 transition transform inline-block shadow-lg">
+                            <i class="fas fa-user-plus mr-2"></i> Create Free Account
+                        </a>
+                    {% else %}
+                        <a href="{% url 'books:book_list' %}" class="bg-orange-500 text-white px-8 py-3 rounded-lg font-bold hover:bg-orange-600 hover:scale-105 transition transform inline-block shadow-lg">
+                            <i class="fas fa-book-open mr-2"></i> Start Browsing
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .line-clamp-1 {
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .section-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 4px solid #059669;
+        display: inline-block;
+    }
+    
+    .card {
+        transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+    }
+</style>
+
+<script>
+    // Mobile sidebar toggle functionality
+    const mobileSidebar = document.getElementById('mobileSidebar');
+    const mobileOverlay = document.getElementById('mobileSidebarOverlay');
+    const mobileFilterToggle = document.getElementById('mobileFilterToggle');
+    const closeMobileSidebar = document.getElementById('closeMobileSidebar');
+    const filterToggleIcon = document.getElementById('filterToggleIcon');
+    
+    function openMobileSidebar() {
+        mobileSidebar.classList.remove('-translate-x-full');
+        mobileOverlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        filterToggleIcon.classList.remove('fa-filter');
+        filterToggleIcon.classList.add('fa-times');
+    }
+    
+    function closeMobileSidebarFunc() {
+        mobileSidebar.classList.add('-translate-x-full');
+        mobileOverlay.classList.add('hidden');
+        document.body.style.overflow = '';
+        filterToggleIcon.classList.remove('fa-times');
+        filterToggleIcon.classList.add('fa-filter');
+    }
+    
+    if (mobileFilterToggle) {
+        mobileFilterToggle.addEventListener('click', function() {
+            if (mobileSidebar.classList.contains('-translate-x-full')) {
+                openMobileSidebar();
+            } else {
+                closeMobileSidebarFunc();
+            }
+        });
+    }
+    
+    if (closeMobileSidebar) {
+        closeMobileSidebar.addEventListener('click', closeMobileSidebarFunc);
+    }
+    
+    if (mobileOverlay) {
+        mobileOverlay.addEventListener('click', closeMobileSidebarFunc);
+    }
+    
+    // Close on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !mobileSidebar.classList.contains('-translate-x-full')) {
+            closeMobileSidebarFunc();
+        }
+    });
+        // Simple sidebar toggle for mobile
+    const mobileBtn = document.getElementById('mobileFilterBtn');
+    const sidebarContainer = document.getElementById('sidebarContainer');
+    const filterIcon = document.getElementById('filterIcon');
+    let isOpen = false;
+    
+    if (mobileBtn) {
+        mobileBtn.addEventListener('click', function() {
+            if (isOpen) {
+                sidebarContainer.style.display = 'none';
+                filterIcon.className = 'fas fa-filter';
+                isOpen = false;
+            } else {
+                sidebarContainer.style.display = 'block';
+                filterIcon.className = 'fas fa-times';
+                isOpen = true;
+            }
+        });
+    }
+    // Handle window resize - reset sidebar position on desktop
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            if (window.innerWidth >= 1024) {
+                // On desktop, ensure sidebar is visible and reset styles
+                mobileSidebar.classList.remove('-translate-x-full');
+                mobileOverlay.classList.add('hidden');
+                document.body.style.overflow = '';
+                filterToggleIcon.classList.remove('fa-times');
+                filterToggleIcon.classList.add('fa-filter');
+            } else {
+                // On mobile, close sidebar if it's open
+                if (!mobileSidebar.classList.contains('-translate-x-full')) {
+                    closeMobileSidebarFunc();
+                }
+            }
+        }, 250);
+    });
+</script>
+{% endblock %}

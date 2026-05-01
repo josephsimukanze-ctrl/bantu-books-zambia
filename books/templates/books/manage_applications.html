@@ -1,0 +1,511 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Manage Applications - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .status-pending { background: #fef3c7; color: #d97706; }
+    .status-approved { background: #dcfce7; color: #059669; }
+    .status-rejected { background: #fee2e2; color: #dc2626; }
+    .status-signed { background: #e9d5ff; color: #7c3aed; }
+    
+    .filter-btn.active {
+        background: #059669;
+        color: white;
+    }
+    
+    .application-card {
+        transition: all 0.3s ease;
+    }
+    
+    .application-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .modal {
+        transition: opacity 0.3s ease;
+    }
+    
+    .modal.show {
+        display: flex !important;
+        animation: fadeIn 0.3s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .badge-count {
+        background: #ef4444;
+        color: white;
+        font-size: 0.7rem;
+        padding: 0.125rem 0.375rem;
+        border-radius: 9999px;
+        margin-left: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Contributor Applications</h1>
+            <p class="text-gray-600">Review and manage contributor applications</p>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow-md p-4 text-center">
+                <p class="text-2xl font-bold text-gray-800">{{ total_applications }}</p>
+                <p class="text-sm text-gray-500">Total Applications</p>
+            </div>
+            <div class="bg-yellow-50 rounded-lg shadow-md p-4 text-center">
+                <p class="text-2xl font-bold text-yellow-600">{{ pending_count }}</p>
+                <p class="text-sm text-yellow-700">Pending Review</p>
+            </div>
+            <div class="bg-green-50 rounded-lg shadow-md p-4 text-center">
+                <p class="text-2xl font-bold text-green-600">{{ approved_count }}</p>
+                <p class="text-sm text-green-700">Approved</p>
+            </div>
+            <div class="bg-red-50 rounded-lg shadow-md p-4 text-center">
+                <p class="text-2xl font-bold text-red-600">{{ rejected_count }}</p>
+                <p class="text-sm text-red-700">Rejected</p>
+            </div>
+        </div>
+        
+        <!-- Filter Tabs -->
+        <div class="flex flex-wrap gap-2 mb-6">
+            <button onclick="filterApps('all')" class="filter-btn px-4 py-2 rounded-lg transition {% if active_filter == 'all' %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+                All Applications
+                {% if total_applications > 0 %}<span class="ml-1 text-xs">{{ total_applications }}</span>{% endif %}
+            </button>
+            <button onclick="filterApps('pending')" class="filter-btn px-4 py-2 rounded-lg transition {% if active_filter == 'pending' %}bg-yellow-500 text-white{% else %}bg-yellow-100 text-yellow-700 hover:bg-yellow-200{% endif %}">
+                <i class="fas fa-clock mr-1"></i> Pending
+                {% if pending_count > 0 %}<span class="badge-count">{{ pending_count }}</span>{% endif %}
+            </button>
+            <button onclick="filterApps('approved')" class="filter-btn px-4 py-2 rounded-lg transition {% if active_filter == 'approved' %}bg-green-600 text-white{% else %}bg-green-100 text-green-700 hover:bg-green-200{% endif %}">
+                <i class="fas fa-check-circle mr-1"></i> Approved
+                {% if approved_count > 0 %}<span class="ml-1 text-xs">{{ approved_count }}</span>{% endif %}
+            </button>
+            <button onclick="filterApps('rejected')" class="filter-btn px-4 py-2 rounded-lg transition {% if active_filter == 'rejected' %}bg-red-600 text-white{% else %}bg-red-100 text-red-700 hover:bg-red-200{% endif %}">
+                <i class="fas fa-times-circle mr-1"></i> Rejected
+                {% if rejected_count > 0 %}<span class="ml-1 text-xs">{{ rejected_count }}</span>{% endif %}
+            </button>
+            <button onclick="filterApps('signed')" class="filter-btn px-4 py-2 rounded-lg transition {% if active_filter == 'signed' %}bg-purple-600 text-white{% else %}bg-purple-100 text-purple-700 hover:bg-purple-200{% endif %}">
+                <i class="fas fa-file-signature mr-1"></i> Signed
+            </button>
+        </div>
+        
+        <!-- Applications List -->
+        <div class="space-y-4" id="applicationsList">
+            {% for app in applications %}
+            <div class="application-card bg-white rounded-xl shadow-md overflow-hidden transition" data-status="{{ app.status }}" data-id="{{ app.id }}">
+                <div class="p-6">
+                    <div class="flex flex-wrap justify-between items-start gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2 flex-wrap">
+                                <h3 class="text-xl font-bold text-gray-800">{{ app.full_name }}</h3>
+                                <span class="status-badge status-{{ app.status }}">
+                                    {% if app.status == 'pending' %}
+                                        <i class="fas fa-clock mr-1"></i> Pending Review
+                                    {% elif app.status == 'approved' %}
+                                        <i class="fas fa-check-circle mr-1"></i> Approved
+                                    {% elif app.status == 'rejected' %}
+                                        <i class="fas fa-times-circle mr-1"></i> Rejected
+                                    {% elif app.status == 'signed' %}
+                                        <i class="fas fa-file-signature mr-1"></i> Agreement Signed
+                                    {% endif %}
+                                </span>
+                                {% if app.status == 'pending' %}
+                                <span class="text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">
+                                    <i class="fas fa-hourglass-half mr-1"></i> Awaiting Review
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
+                                <p class="text-gray-600 text-sm">
+                                    <i class="fas fa-user w-5 text-gray-400"></i> {{ app.user.username }}
+                                </p>
+                                <p class="text-gray-600 text-sm">
+                                    <i class="fas fa-envelope w-5 text-gray-400"></i> {{ app.email }}
+                                </p>
+                                <p class="text-gray-600 text-sm">
+                                    <i class="fas fa-phone w-5 text-gray-400"></i> {{ app.phone_number }}
+                                </p>
+                                <p class="text-gray-600 text-sm">
+                                    <i class="fas fa-calendar-alt w-5 text-gray-400"></i> Applied: {{ app.created_at|date:"M d, Y" }}
+                                </p>
+                            </div>
+                            {% if app.subject_specialization %}
+                            <div class="mt-2">
+                                <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                                    <i class="fas fa-graduation-cap mr-1"></i> {{ app.subject_specialization }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="viewApplication({{ app.id }})" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                                <i class="fas fa-eye mr-1"></i> View Details
+                            </button>
+                            {% if app.status == 'pending' %}
+                            <button onclick="quickApprove({{ app.id }})" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+                                <i class="fas fa-check mr-1"></i> Quick Approve
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-16 bg-white rounded-xl shadow">
+                <i class="fas fa-inbox text-7xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-bold text-gray-700 mb-2">No Applications</h3>
+                <p class="text-gray-500">No contributor applications found.</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if applications.has_other_pages %}
+        <div class="flex justify-center mt-8">
+            <nav class="flex gap-2">
+                {% if applications.has_previous %}
+                <a href="?page={{ applications.previous_page_number }}{% if active_filter %}&status={{ active_filter }}{% endif %}" class="px-4 py-2 bg-white border rounded-lg hover:bg-gray-50 transition">
+                    ← Previous
+                </a>
+                {% endif %}
+                
+                <span class="px-4 py-2 bg-green-600 text-white rounded-lg">
+                    Page {{ applications.number }} of {{ applications.paginator.num_pages }}
+                </span>
+                
+                {% if applications.has_next %}
+                <a href="?page={{ applications.next_page_number }}{% if active_filter %}&status={{ active_filter }}{% endif %}" class="px-4 py-2 bg-white border rounded-lg hover:bg-gray-50 transition">
+                    Next →
+                </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Application Details Modal -->
+<div id="appModal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10">
+            <h3 class="text-xl font-bold text-gray-800">
+                <i class="fas fa-file-alt text-green-600 mr-2"></i> Application Details
+            </h3>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div id="modalContent" class="p-6">
+            <div class="text-center py-8">
+                <div class="loading-spinner mx-auto mb-4"></div>
+                <p class="text-gray-500">Loading application details...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Toast -->
+<div id="successToast" class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg hidden z-50">
+    <i class="fas fa-check-circle mr-2"></i>
+    <span id="toastMessage"></span>
+</div>
+
+<style>
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(5, 150, 105, 0.2);
+        border-radius: 50%;
+        border-top-color: #059669;
+        animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .modal {
+        transition: opacity 0.3s ease;
+    }
+    
+    .toast-show {
+        animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+</style>
+
+<script>
+    let currentApp = null;
+    let activeFilter = '{{ active_filter|default:"all" }}';
+    
+    // Filter applications
+    function filterApps(status) {
+        activeFilter = status;
+        
+        // Update URL with filter
+        const url = new URL(window.location.href);
+        if (status === 'all') {
+            url.searchParams.delete('status');
+        } else {
+            url.searchParams.set('status', status);
+        }
+        window.location.href = url.toString();
+    }
+    
+    // View application details
+    async function viewApplication(appId) {
+        const modal = document.getElementById('appModal');
+        const modalContent = document.getElementById('modalContent');
+        
+        // Show loading
+        modalContent.innerHTML = `
+            <div class="text-center py-8">
+                <div class="loading-spinner mx-auto mb-4"></div>
+                <p class="text-gray-500">Loading application details...</p>
+            </div>
+        `;
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        modal.classList.add('show');
+        
+        try {
+            const response = await fetch(`/books/api/application/${appId}/`);
+            const data = await response.json();
+            currentApp = data;
+            
+            modalContent.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Personal Information Section -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-bold text-gray-800 mb-3 flex items-center">
+                            <i class="fas fa-user-circle text-green-600 mr-2"></i>
+                            Personal Information
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-500">Full Name</p>
+                                <p class="font-semibold">${escapeHtml(data.full_name)}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Username</p>
+                                <p class="font-semibold">${escapeHtml(data.username)}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Email</p>
+                                <p class="font-semibold">${escapeHtml(data.email)}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Phone Number</p>
+                                <p class="font-semibold">${escapeHtml(data.phone_number)}</p>
+                            </div>
+                            <div class="md:col-span-2">
+                                <p class="text-sm text-gray-500">Address</p>
+                                <p class="font-semibold">${escapeHtml(data.address)}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Subject Specialization</p>
+                                <p class="font-semibold">${escapeHtml(data.subject_specialization || 'Not specified')}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Application Date</p>
+                                <p class="font-semibold">${new Date(data.created_at).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Experience Section -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-bold text-gray-800 mb-3 flex items-center">
+                            <i class="fas fa-briefcase text-green-600 mr-2"></i>
+                            Experience
+                        </h4>
+                        <div class="space-y-3">
+                            <div>
+                                <p class="text-sm text-gray-500">Teaching Experience</p>
+                                <p class="text-gray-700">${escapeHtml(data.teaching_experience || 'None provided')}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Writing Experience</p>
+                                <p class="text-gray-700">${escapeHtml(data.writing_experience || 'None provided')}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Reason to Contribute</p>
+                                <p class="text-gray-700">${escapeHtml(data.reason_to_contribute)}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Documents Section -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-bold text-gray-800 mb-3 flex items-center">
+                            <i class="fas fa-file-pdf text-green-600 mr-2"></i>
+                            Documents
+                        </h4>
+                        <div class="flex flex-wrap gap-3">
+                            ${data.grade12_certificate ? `
+                            <a href="${data.grade12_certificate}" target="_blank" class="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-lg border hover:bg-gray-50 transition">
+                                <i class="fas fa-file-pdf text-red-500"></i>
+                                <span>Grade 12 Certificate</span>
+                                <i class="fas fa-external-link-alt text-xs text-gray-400"></i>
+                            </a>
+                            ` : ''}
+                            ${data.nrc_document ? `
+                            <a href="${data.nrc_document}" target="_blank" class="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-lg border hover:bg-gray-50 transition">
+                                <i class="fas fa-id-card text-blue-500"></i>
+                                <span>NRC Document</span>
+                                <i class="fas fa-external-link-alt text-xs text-gray-400"></i>
+                            </a>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <!-- Admin Actions -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-bold text-gray-800 mb-3 flex items-center">
+                            <i class="fas fa-gavel text-green-600 mr-2"></i>
+                            Admin Actions
+                        </h4>
+                        <form id="reviewForm" method="post" action="{% url 'books:manage_applications' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="application_id" value="${data.id}">
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-semibold mb-2">Admin Notes</label>
+                                <textarea name="admin_notes" rows="3" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500" placeholder="Add notes about this application..."></textarea>
+                            </div>
+                            <div class="flex gap-3">
+                                <button type="submit" name="action" value="approve" class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">
+                                    <i class="fas fa-check mr-2"></i> Approve Application
+                                </button>
+                                <button type="submit" name="action" value="reject" class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition">
+                                    <i class="fas fa-times mr-2"></i> Reject Application
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        } catch (error) {
+            console.error('Error:', error);
+            modalContent.innerHTML = `
+                <div class="text-center py-8 text-red-500">
+                    <i class="fas fa-exclamation-circle text-5xl mb-4"></i>
+                    <p>Failed to load application details.</p>
+                    <button onclick="closeModal()" class="mt-4 bg-gray-200 px-4 py-2 rounded-lg">Close</button>
+                </div>
+            `;
+        }
+    }
+    
+    // Quick approve without modal
+    async function quickApprove(appId) {
+        if (!confirm('Are you sure you want to approve this application?')) return;
+        
+        const formData = new FormData();
+        formData.append('application_id', appId);
+        formData.append('action', 'approve');
+        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+        
+        try {
+            const response = await fetch('/books/manage-applications/', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (response.ok) {
+                showToast('Application approved successfully!');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast('Error approving application', 'error');
+            }
+        } catch (error) {
+            showToast('Error processing request', 'error');
+        }
+    }
+    
+    function closeModal() {
+        const modal = document.getElementById('appModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex', 'show');
+        currentApp = null;
+    }
+    
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('successToast');
+        const toastMessage = document.getElementById('toastMessage');
+        toastMessage.textContent = message;
+        toast.classList.remove('hidden');
+        toast.classList.add('toast-show');
+        
+        setTimeout(() => {
+            toast.classList.add('hidden');
+            toast.classList.remove('toast-show');
+        }, 3000);
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+    
+    // Close modal when clicking outside
+    document.getElementById('appModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+</script>
+{% endblock %}

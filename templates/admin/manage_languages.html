@@ -1,0 +1,364 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Languages - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+    .language-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .language-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    .search-input:focus {
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+        border-color: #059669;
+    }
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .status-active {
+        background-color: #d1fae5;
+        color: #059669;
+    }
+    .status-inactive {
+        background-color: #fee2e2;
+        color: #dc2626;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fadeIn 0.3s ease-out;
+    }
+    .code-badge {
+        font-family: monospace;
+        background: #f3f4f6;
+        padding: 0.125rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex flex-wrap justify-between items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Manage Languages</h1>
+            <p class="text-gray-600">Manage book languages and localization</p>
+        </div>
+        <button onclick="openLanguageModal()" class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-5 py-2.5 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition flex items-center gap-2 shadow-md">
+            <i class="fas fa-plus"></i> Add Language
+        </button>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-md p-4 text-center">
+            <div class="text-2xl font-bold text-purple-600">{{ languages|length }}</div>
+            <p class="text-gray-500 text-sm">Total Languages</p>
+        </div>
+        <div class="bg-green-50 rounded-xl shadow-md p-4 text-center">
+            <div class="text-2xl font-bold text-green-600">{{ active_count }}</div>
+            <p class="text-gray-500 text-sm">Active</p>
+        </div>
+        <div class="bg-gray-50 rounded-xl shadow-md p-4 text-center">
+            <div class="text-2xl font-bold text-gray-600">{{ inactive_count }}</div>
+            <p class="text-gray-500 text-sm">Inactive</p>
+        </div>
+        <div class="bg-blue-50 rounded-xl shadow-md p-4 text-center">
+            <div class="text-2xl font-bold text-blue-600">{{ total_books }}</div>
+            <p class="text-gray-500 text-sm">Books in these languages</p>
+        </div>
+    </div>
+    
+    <!-- Search Bar -->
+    <div class="bg-white rounded-xl shadow-md p-4 mb-6">
+        <div class="relative">
+            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+            <input type="text" id="searchInput" placeholder="Search languages by name, native name, or code..." 
+                   class="search-input w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500">
+        </div>
+    </div>
+    
+    <!-- Languages Grid -->
+    <div id="languagesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for lang in languages %}
+        <div class="language-card bg-white rounded-xl shadow-md overflow-hidden animate-fade-in" data-name="{{ lang.name|lower }}" data-native="{{ lang.native_name|lower }}" data-code="{{ lang.code|lower }}">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-language text-purple-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg text-gray-800">{{ lang.name }}</h3>
+                            <p class="text-xs text-gray-500">
+                                <span class="code-badge">{{ lang.code }}</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="editLanguage({{ lang.id }})" class="text-blue-600 hover:text-blue-700 transition transform hover:scale-110">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteLanguage({{ lang.id }})" class="text-red-600 hover:text-red-700 transition transform hover:scale-110">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                {% if lang.native_name %}
+                <p class="text-gray-600 text-sm mb-3">
+                    <i class="fas fa-globe mr-1 text-gray-400"></i> 
+                    <span class="font-medium">Native name:</span> {{ lang.native_name }}
+                </p>
+                {% endif %}
+                <div class="flex justify-between items-center pt-3 border-t">
+                    <span class="text-sm text-gray-500">
+                        <i class="fas fa-book mr-1"></i> {{ lang.book_count }} books
+                    </span>
+                    <span class="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600">
+                        Order: {{ lang.order }}
+                    </span>
+                </div>
+                <div class="mt-3">
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="toggle-status mr-2" data-id="{{ lang.id }}" {% if lang.is_active %}checked{% endif %}>
+                        <span class="text-xs text-gray-500">
+                            {% if lang.is_active %}
+                                <span class="status-badge status-active"><i class="fas fa-check-circle mr-1"></i> Active</span>
+                            {% else %}
+                                <span class="status-badge status-inactive"><i class="fas fa-times-circle mr-1"></i> Inactive</span>
+                            {% endif %}
+                        </span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-12 bg-white rounded-xl shadow-md">
+            <i class="fas fa-language text-6xl text-gray-400 mb-4"></i>
+            <p class="text-gray-500">No languages added yet.</p>
+            <button onclick="openLanguageModal()" class="mt-4 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">
+                <i class="fas fa-plus mr-2"></i> Add Your First Language
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Empty State for Search -->
+    <div id="emptyState" class="hidden text-center py-12 bg-white rounded-xl shadow-md mt-6">
+        <i class="fas fa-search text-6xl text-gray-400 mb-4"></i>
+        <h3 class="text-xl font-bold text-gray-700 mb-2">No Languages Found</h3>
+        <p class="text-gray-500 mb-6">No languages match your search criteria.</p>
+        <button onclick="clearSearch()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition">
+            <i class="fas fa-sync-alt mr-2"></i> Clear Search
+        </button>
+    </div>
+</div>
+
+<!-- Language Modal -->
+<div id="languageModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 transform transition-all">
+        <div class="px-6 py-4 border-b bg-gradient-to-r from-purple-50 to-white">
+            <h3 id="langModalTitle" class="text-xl font-bold text-gray-800">Add Language</h3>
+        </div>
+        <form id="languageForm" method="post" action="{% url 'books:add_language' %}" class="p-6">
+            {% csrf_token %}
+            <input type="hidden" id="languageId" name="language_id">
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Language Name *</label>
+                <input type="text" name="name" id="langName" required 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition">
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Native Name</label>
+                <input type="text" name="native_name" id="langNativeName" 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                <p class="text-xs text-gray-500 mt-1">Name in the language itself (e.g., Chibemba, Chinyanja)</p>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Language Code *</label>
+                <input type="text" name="code" id="langCode" required 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                       placeholder="e.g., en, bem, ny, toi">
+                <p class="text-xs text-gray-500 mt-1">ISO 639-1 or custom code (2-3 letters)</p>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Display Order</label>
+                <input type="number" name="order" id="langOrder" value="0" 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                <p class="text-xs text-gray-500 mt-1">Lower numbers appear first</p>
+            </div>
+            <div class="mb-4">
+                <label class="inline-flex items-center">
+                    <input type="checkbox" name="is_active" id="langActive" class="mr-2" checked>
+                    <span class="text-gray-700">Active</span>
+                </label>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="submit" class="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-2 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition transform hover:scale-105">
+                    <i class="fas fa-save mr-2"></i> Save Language
+                </button>
+                <button type="button" onclick="closeLanguageModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    const languagesContainer = document.getElementById('languagesContainer');
+    const emptyState = document.getElementById('emptyState');
+    
+    function filterLanguages() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const cards = document.querySelectorAll('.language-card');
+        let visibleCount = 0;
+        
+        cards.forEach(card => {
+            const name = card.getAttribute('data-name') || '';
+            const native = card.getAttribute('data-native') || '';
+            const code = card.getAttribute('data-code') || '';
+            let show = true;
+            
+            if (searchTerm && !name.includes(searchTerm) && !native.includes(searchTerm) && !code.includes(searchTerm)) {
+                show = false;
+            }
+            
+            card.style.display = show ? 'block' : 'none';
+            if (show) visibleCount++;
+        });
+        
+        if (visibleCount === 0 && cards.length > 0) {
+            emptyState.classList.remove('hidden');
+        } else {
+            emptyState.classList.add('hidden');
+        }
+    }
+    
+    function clearSearch() {
+        searchInput.value = '';
+        filterLanguages();
+    }
+    
+    searchInput.addEventListener('keyup', filterLanguages);
+    
+    // Modal functions
+    function openLanguageModal() {
+        document.getElementById('langModalTitle').textContent = 'Add Language';
+        document.getElementById('languageForm').reset();
+        document.getElementById('languageId').value = '';
+        document.getElementById('langOrder').value = '0';
+        document.getElementById('langActive').checked = true;
+        document.getElementById('languageModal').classList.add('flex');
+        document.getElementById('languageModal').classList.remove('hidden');
+    }
+    
+    function closeLanguageModal() {
+        document.getElementById('languageModal').classList.add('hidden');
+        document.getElementById('languageModal').classList.remove('flex');
+    }
+    
+    function editLanguage(id) {
+        fetch(`/books/admin-panel/languages/${id}/`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('langModalTitle').textContent = 'Edit Language';
+                document.getElementById('languageId').value = data.id;
+                document.getElementById('langName').value = data.name;
+                document.getElementById('langNativeName').value = data.native_name || '';
+                document.getElementById('langCode').value = data.code;
+                document.getElementById('langOrder').value = data.order || 0;
+                document.getElementById('langActive').checked = data.is_active;
+                document.getElementById('languageModal').classList.add('flex');
+                document.getElementById('languageModal').classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error loading language data');
+            });
+    }
+    
+    function deleteLanguage(id) {
+        if (confirm('Are you sure you want to delete this language? This action cannot be undone.')) {
+            fetch(`/books/admin-panel/languages/delete/${id}/`, { 
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error deleting language: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting language');
+            });
+        }
+    }
+    
+    // Toggle language status
+    document.querySelectorAll('.toggle-status').forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const id = this.dataset.id;
+            fetch(`/books/admin-panel/languages/update/${id}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: `is_active=${this.checked}`
+            })
+            .then(() => location.reload());
+        });
+    });
+    
+    function getCookie(name) {
+        let value = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + '=')) {
+                    value = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return value;
+    }
+    
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeLanguageModal();
+        }
+    });
+    
+    // Close modal when clicking outside
+    document.getElementById('languageModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeLanguageModal();
+        }
+    });
+</script>
+{% endblock %}

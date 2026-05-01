@@ -1,0 +1,479 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Security Settings - Bantu Books Zambia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .security-card {
+        transition: all 0.3s ease;
+    }
+    .security-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    .biometric-demo {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .fingerprint-icon {
+        transition: all 0.3s ease;
+    }
+    .fingerprint-icon:hover {
+        transform: scale(1.1);
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    .pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .webauthn-support {
+        background: #f0fdf4;
+        border-left: 4px solid #059669;
+    }
+    .webauthn-unsupported {
+        background: #fef2f2;
+        border-left: 4px solid #ef4444;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Security Settings</h1>
+        <p class="text-gray-600 mb-8">Manage your account security and authentication methods</p>
+        
+        <!-- WebAuthn Support Check -->
+        <div id="webauthnSupportCheck" class="mb-6"></div>
+        
+        <!-- HTTPS Warning -->
+        {% if not request.is_secure %}
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 rounded-lg p-4 mb-6">
+            <div class="flex items-start gap-3">
+                <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                <div>
+                    <p class="font-semibold text-yellow-800">HTTPS Required for Biometric Login</p>
+                    <p class="text-sm text-yellow-700">Biometric authentication requires a secure HTTPS connection. 
+                       Please use the HTTPS version of this site or enable it in your browser settings.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Biometric Authentication Card -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden security-card mb-6">
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-fingerprint text-white text-2xl"></i>
+                    <h2 class="text-xl font-bold text-white">Biometric Authentication</h2>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-semibold text-gray-800">Status</h3>
+                            <span id="biometric-status" class="px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-600">
+                                <i class="fas fa-spinner fa-spin mr-1"></i> Checking...
+                            </span>
+                        </div>
+                        
+                        <p class="text-gray-600 mb-4">
+                            Use your fingerprint, Face ID, or Windows Hello for quick and secure login.
+                            Your biometric data never leaves your device and is stored securely.
+                        </p>
+                        
+                        <div class="flex gap-3 flex-wrap">
+                            <button id="setup-biometric" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2 rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i class="fas fa-fingerprint mr-2"></i> Set Up Biometric Login
+                            </button>
+                            <button id="remove-biometric" class="border border-red-500 text-red-500 px-5 py-2 rounded-lg font-semibold hover:bg-red-50 transition hidden">
+                                <i class="fas fa-trash-alt mr-2"></i> Remove
+                            </button>
+                        </div>
+                        
+                        <div id="message" class="mt-4"></div>
+                        <div id="webauthn-debug" class="mt-2 text-xs text-gray-500 hidden"></div>
+                    </div>
+                    
+                    <div class="md:w-80">
+                        <div class="biometric-demo rounded-xl p-4 text-white text-center">
+                            <div class="fingerprint-icon mb-3">
+                                <i class="fas fa-fingerprint text-5xl"></i>
+                            </div>
+                            <p class="font-semibold text-sm">Quick & Secure Access</p>
+                            <p class="text-xs opacity-90 mt-1">Login with just your fingerprint</p>
+                            <div class="mt-3 text-left text-xs opacity-80">
+                                <p class="mb-1"><i class="fas fa-check-circle mr-1"></i> One-tap login</p>
+                                <p class="mb-1"><i class="fas fa-check-circle mr-1"></i> Bank-grade security</p>
+                                <p><i class="fas fa-check-circle mr-1"></i> No passwords needed</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <h3 class="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                        <i class="fas fa-info-circle text-indigo-600"></i>
+                        How to set up biometric login:
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                        <div class="flex items-start gap-2">
+                            <span class="bg-indigo-100 text-indigo-600 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                            <span class="text-gray-600">Click "Set Up Biometric Login" button above</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="bg-indigo-100 text-indigo-600 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                            <span class="text-gray-600">Your browser will show a popup asking for fingerprint/face</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="bg-indigo-100 text-indigo-600 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                            <span class="text-gray-600">Place your finger on the sensor or look at your camera</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="bg-indigo-100 text-indigo-600 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">4</span>
+                            <span class="text-gray-600">After successful verification, your credential is saved</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="bg-indigo-100 text-indigo-600 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">5</span>
+                            <span class="text-gray-600">Now you can login with just your fingerprint!</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-3">
+                        <i class="fas fa-shield-alt mr-1"></i> 
+                        Your biometric data is stored securely in your device's hardware security module and never transmitted.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Password Security Card -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden security-card">
+            <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-lock text-white text-2xl"></i>
+                    <h2 class="text-xl font-bold text-white">Password Security</h2>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="flex flex-col md:flex-row justify-between items-start gap-4">
+                    <div>
+                        <p class="text-gray-600 mb-2">Last password change: <strong id="last-password-change">{{ user.last_login|date:"F d, Y"|default:"Never" }}</strong></p>
+                        <p class="text-sm text-gray-500">For better security, change your password regularly.</p>
+                    </div>
+                    <a href="{% url 'accounts:change_password' %}" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-lg font-semibold hover:bg-gray-300 transition whitespace-nowrap">
+                        <i class="fas fa-key mr-2"></i> Change Password
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // DOM Elements
+    const setupBtn = document.getElementById('setup-biometric');
+    const removeBtn = document.getElementById('remove-biometric');
+    const messageDiv = document.getElementById('message');
+    const statusSpan = document.getElementById('biometric-status');
+    const debugDiv = document.getElementById('webauthn-debug');
+    
+    let hasBiometric = false;
+    
+    function showMessage(msg, isError, duration = 5000) {
+        messageDiv.innerHTML = `<div class="p-3 rounded-lg ${isError ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-green-100 text-green-700 border border-green-200'}">
+            <i class="fas ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'} mr-2"></i> ${msg}
+        </div>`;
+        setTimeout(() => {
+            if (messageDiv.firstChild) messageDiv.firstChild.remove();
+        }, duration);
+    }
+    
+    function debugLog(msg) {
+        console.log('[WebAuthn]', msg);
+        if (debugDiv) {
+            debugDiv.classList.remove('hidden');
+            debugDiv.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${msg}</div>`;
+        }
+    }
+    
+    function updateUIForBiometricStatus(hasBiometric) {
+        if (hasBiometric) {
+            statusSpan.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Enabled';
+            statusSpan.className = 'px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-700';
+            setupBtn.textContent = '✓ Biometric Enabled';
+            setupBtn.disabled = true;
+            removeBtn.classList.remove('hidden');
+        } else {
+            statusSpan.innerHTML = '<i class="fas fa-circle mr-1"></i> Not Set Up';
+            statusSpan.className = 'px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-600';
+            setupBtn.textContent = 'Set Up Biometric Login';
+            setupBtn.disabled = false;
+            removeBtn.classList.add('hidden');
+        }
+    }
+    
+    async function checkBiometricStatus() {
+        try {
+            const response = await fetch('/accounts/biometric/status/');
+            if (response.ok) {
+                const data = await response.json();
+                hasBiometric = data.has_biometric;
+                updateUIForBiometricStatus(hasBiometric);
+            } else {
+                updateUIForBiometricStatus(false);
+            }
+        } catch (error) {
+            console.log('Status check failed:', error);
+            updateUIForBiometricStatus(false);
+        }
+    }
+    
+    // Convert ArrayBuffer to Base64
+    function arrayBufferToBase64(buffer) {
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
+    }
+    
+    // Convert Base64 to ArrayBuffer
+    function base64ToArrayBuffer(base64) {
+        const binaryString = atob(base64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes.buffer;
+    }
+    
+    // Generate random challenge
+    function generateChallenge() {
+        const challenge = new Uint8Array(32);
+        window.crypto.getRandomValues(challenge);
+        return challenge;
+    }
+    
+    // Check WebAuthn support
+    function checkWebAuthnSupport() {
+        const supportDiv = document.getElementById('webauthnSupportCheck');
+        if (window.PublicKeyCredential) {
+            supportDiv.innerHTML = `
+                <div class="webauthn-support p-4 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                        <div>
+                            <p class="font-semibold text-green-800">WebAuthn Supported</p>
+                            <p class="text-sm text-green-700">Your browser supports biometric authentication.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            debugLog('WebAuthn is supported');
+            return true;
+        } else {
+            supportDiv.innerHTML = `
+                <div class="webauthn-unsupported p-4 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                        <div>
+                            <p class="font-semibold text-red-800">WebAuthn Not Supported</p>
+                            <p class="text-sm text-red-700">Your browser does not support biometric authentication. Please use a modern browser like Chrome, Edge, or Safari.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            debugLog('WebAuthn is NOT supported');
+            setupBtn.disabled = true;
+            setupBtn.title = 'Your browser does not support biometric authentication';
+            return false;
+        }
+    }
+    
+    async function registerBiometric() {
+        // Check for HTTPS
+        if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+            showMessage('⚠️ Biometric registration requires HTTPS. Please use the HTTPS version of this site.', true);
+            return;
+        }
+        
+        // Check WebAuthn support
+        if (!window.PublicKeyCredential) {
+            showMessage('❌ Your browser does not support WebAuthn.', true);
+            return;
+        }
+        
+        // Check if already registered
+        if (hasBiometric) {
+            showMessage('Biometric is already set up for this account.', false);
+            return;
+        }
+        
+        setupBtn.disabled = true;
+        setupBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Waiting for fingerprint...';
+        
+        try {
+            debugLog('Starting WebAuthn registration');
+            
+            // Get user ID
+            const userId = new TextEncoder().encode("{{ user.id }}");
+            const userName = "{{ user.email }}";
+            const userDisplayName = "{{ user.get_full_name|default:user.username }}";
+            
+            // Create random challenge
+            const challenge = generateChallenge();
+            
+            // Create credential
+            const publicKeyCredentialCreationOptions = {
+                challenge: challenge,
+                rp: {
+                    name: "Bantu Books Zambia",
+                    id: window.location.hostname
+                },
+                user: {
+                    id: userId,
+                    name: userName,
+                    displayName: userDisplayName
+                },
+                pubKeyCredParams: [
+                    { alg: -7, type: "public-key" },  // ES256
+                    { alg: -257, type: "public-key" } // RS256
+                ],
+                authenticatorSelection: {
+                    authenticatorAttachment: "platform",
+                    userVerification: "required",
+                    residentKey: "required"
+                },
+                timeout: 60000,
+                attestation: "none"
+            };
+            
+            debugLog('Creating credential with options:', publicKeyCredentialCreationOptions);
+            
+            // Show browser's native biometric prompt
+            const credential = await navigator.credentials.create({
+                publicKey: publicKeyCredentialCreationOptions
+            });
+            
+            debugLog('Credential created successfully', credential);
+            
+            if (credential) {
+                // Prepare data to send to server
+                const credentialData = {
+                    id: credential.id,
+                    rawId: arrayBufferToBase64(credential.rawId),
+                    response: {
+                        clientDataJSON: arrayBufferToBase64(credential.response.clientDataJSON),
+                        attestationObject: arrayBufferToBase64(credential.response.attestationObject)
+                    },
+                    type: credential.type,
+                    device_name: navigator.userAgent.split(' ')[0] || 'WebAuthn Device'
+                };
+                
+                debugLog('Sending credential to server');
+                
+                const response = await fetch('/accounts/biometric/register/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(credentialData)
+                });
+                
+                const result = await response.json();
+                debugLog('Server response:', result);
+                
+                if (result.success) {
+                    showMessage('✅ Biometric login has been set up successfully!', false);
+                    hasBiometric = true;
+                    updateUIForBiometricStatus(true);
+                    localStorage.setItem('biometric_enabled', 'true');
+                    await checkBiometricStatus();
+                } else {
+                    throw new Error(result.error || 'Registration failed');
+                }
+            }
+            
+        } catch (error) {
+            debugLog('Registration error:', error);
+            console.error('Registration error:', error);
+            
+            if (error.name === 'NotAllowedError') {
+                showMessage('❌ You denied the permission request. Please allow biometric access and try again.', true);
+            } else if (error.name === 'NotSupportedError') {
+                showMessage('❌ Your device does not have a biometric sensor.', true);
+            } else if (error.name === 'SecurityError') {
+                showMessage('❌ Security error. Please ensure you are using HTTPS.', true);
+            } else {
+                showMessage('❌ Registration failed: ' + error.message, true);
+            }
+        } finally {
+            setupBtn.disabled = false;
+            setupBtn.innerHTML = '<i class="fas fa-fingerprint mr-2"></i> Set Up Biometric Login';
+        }
+    }
+    
+    async function removeBiometric() {
+        if (!confirm('Are you sure you want to remove biometric login from your account?')) {
+            return;
+        }
+        
+        removeBtn.disabled = true;
+        removeBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Removing...';
+        
+        try {
+            const response = await fetch('/accounts/biometric/remove/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            });
+            
+            if (response.ok) {
+                showMessage('✅ Biometric login has been removed.', false);
+                hasBiometric = false;
+                updateUIForBiometricStatus(false);
+                localStorage.removeItem('biometric_enabled');
+                await checkBiometricStatus();
+            } else {
+                const data = await response.json();
+                throw new Error(data.error || 'Remove failed');
+            }
+        } catch (error) {
+            showMessage('❌ Failed to remove biometric login: ' + error.message, true);
+        } finally {
+            removeBtn.disabled = false;
+            removeBtn.innerHTML = '<i class="fas fa-trash-alt mr-2"></i> Remove';
+        }
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Event Listeners
+    if (setupBtn) setupBtn.addEventListener('click', registerBiometric);
+    if (removeBtn) removeBtn.addEventListener('click', removeBiometric);
+    
+    // Initialize
+    checkWebAuthnSupport();
+    checkBiometricStatus();
+</script>
+{% endblock %}

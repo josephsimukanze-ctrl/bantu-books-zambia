@@ -1,0 +1,937 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="{% if request.COOKIES.dark_mode == 'true' %}dark{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Bantu Books Zambia - Your premier digital library for Zambian educational materials, novels, and resources">
+    <meta name="keywords" content="Zambian books, ECZ papers, university materials, Zambian novels, local languages">
+    <meta name="author" content="Bantu Books Zambia">
+    <meta name="theme-color" content="#059669">
+    
+    <title>{% block title %}Bantu Books Zambia - Your Zambian Digital Library{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Configuration with Dark Mode -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            200: '#a7f3d0',
+                            300: '#6ee7b7',
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b',
+                        },
+                        accent: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            200: '#fed7aa',
+                            300: '#fdba74',
+                            400: '#fb923c',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                        'display': ['Poppins', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-in': 'slideIn 0.3s ease-out',
+                        'spin-slow': 'spin 3s linear infinite',
+                        'bounce-slow': 'bounce 2s infinite',
+                        'pulse-slow': 'pulse 3s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideIn: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(0)' },
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- AOS Library for scroll animations -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- Dark Mode CSS Variables -->
+    <style>
+        /* Light Mode (Default) */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f3f4f6;
+            --bg-tertiary: #f9fafb;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --card-bg: #ffffff;
+            --header-bg: #ffffff;
+            --footer-bg: #f9fafb;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --gradient-start: #f5f7fa;
+            --gradient-end: #f3f4f6;
+        }
+        
+        /* Dark Mode */
+        .dark {
+            --bg-primary: #111827;
+            --bg-secondary: #1f2937;
+            --bg-tertiary: #374151;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --text-muted: #9ca3af;
+            --border-color: #374151;
+            --card-bg: #1f2937;
+            --header-bg: #111827;
+            --footer-bg: #0f172a;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --gradient-start: #1f2937;
+            --gradient-end: #111827;
+        }
+        
+        /* Apply dark mode colors */
+        body {
+            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            min-height: 100vh;
+        }
+        
+        /* Card styles */
+        .card, .bg-white {
+            background-color: var(--card-bg);
+            border-color: var(--border-color);
+        }
+        
+        /* Input styles */
+        input, select, textarea {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: #059669;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+        }
+        
+        /* Placeholder styles */
+        input::placeholder, textarea::placeholder {
+            color: var(--text-muted);
+        }
+        
+        /* Table styles */
+        table {
+            background-color: var(--card-bg);
+        }
+        
+        th {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        td {
+            border-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+        
+        /* Sidebar styles */
+        .sidebar, .bg-gray-50 {
+            background-color: var(--bg-secondary);
+        }
+        
+        /* Dropdown styles */
+        .dropdown-item {
+            color: var(--text-secondary);
+        }
+        
+        .dropdown-item:hover {
+            background-color: var(--bg-tertiary);
+            color: #059669;
+        }
+        
+        /* Modal styles */
+        .modal-content {
+            background-color: var(--card-bg);
+            border-color: var(--border-color);
+        }
+        
+        /* Button styles */
+        .btn-outline {
+            border-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+        
+        .btn-outline:hover {
+            background-color: #059669;
+            color: white;
+        }
+        
+        /* Progress bar */
+        .bg-gray-200 {
+            background-color: var(--bg-tertiary);
+        }
+        
+        /* Border colors */
+        .border, .border-t, .border-b, .border-l, .border-r {
+            border-color: var(--border-color);
+        }
+        
+        /* Text colors */
+        .text-gray-500, .text-gray-600 {
+            color: var(--text-muted);
+        }
+        
+        .text-gray-700, .text-gray-800 {
+            color: var(--text-secondary);
+        }
+        
+        .text-gray-900 {
+            color: var(--text-primary);
+        }
+        
+        /* Custom scrollbar for light mode */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #10b981;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #059669;
+        }
+        
+        /* Dark mode custom scrollbar */
+        .dark ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        
+        .dark ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+        }
+        
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+        
+        /* Smooth transitions for all elements */
+        * {
+            transition-property: background-color, border-color, color, fill, stroke;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 200ms;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-primary);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+            padding: 0.625rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 1px 3px 0 var(--shadow-color);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px var(--shadow-color);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            padding: 0.625rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px var(--shadow-color);
+        }
+        
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        @media (min-width: 640px) {
+            .container {
+                padding: 0 1.5rem;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .container {
+                padding: 0 2rem;
+            }
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            animation: slideInRight 0.3s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .ai-chat-bubble {
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        @media (max-width: 768px) {
+            .section-title {
+                font-size: 1.5rem;
+            }
+        }
+        
+        /* Loading Screen Styles */
+    /* Loading Screen Styles */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.5s ease;
+}
+
+.dark .loading-overlay {
+    background: linear-gradient(135deg, #064e3b 0%, #059669 100%);
+}
+
+.loading-content {
+    text-align: center;
+    max-width: 400px;
+    padding: 2rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1.5rem;
+}
+
+.loading-progress {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 1rem 0;
+}
+
+.loading-progress-bar {
+    width: 0%;
+    height: 100%;
+    background: white;
+    transition: width 0.3s ease;
+}
+        
+        .loading-hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="antialiased">
+    <!-- Loading Screen -->
+   <!-- Loading Screen -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <h2 id="loadingTitle" class="text-2xl font-bold text-white mb-3">Loading...</h2>
+        <p id="loadingMessage" class="text-green-100 text-base mb-6">Please wait...</p>
+        <div class="loading-progress">
+            <div id="loadingProgressBar" class="loading-progress-bar"></div>
+        </div>
+        <div class="mt-6 flex justify-center gap-2 text-green-100 text-sm">
+            <i class="fas fa-book-open"></i>
+            <span>Bantu Books Zambia</span>
+        </div>
+    </div>
+</div>
+    
+   
+
+<!-- Sidebar Toggle Button -->
+<button onclick="openSidebar()" class="fixed bottom-4 left-4 z-[100] bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-all duration-300">
+    <i class="fas fa-filter text-xl"></i>
+</button>
+
+<!-- Overlay -->
+<div id="sidebarOverlay" onclick="closeSidebar()" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden"></div>
+
+<!-- Sidebar -->
+<div id="mobileSidebar" class="fixed top-0 left-0 h-full w-80 bg-white dark:bg-gray-800 shadow-2xl z-[70] hidden overflow-y-auto">
+    {% include 'includes/filters_sidebar.html' %}
+</div>
+
+<script>
+    function openSidebar() {
+        document.getElementById('mobileSidebar').style.display = 'block';
+        document.getElementById('sidebarOverlay').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeSidebar() {
+        document.getElementById('mobileSidebar').style.display = 'none';
+        document.getElementById('sidebarOverlay').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+</script>
+    <!-- AI Chat Button - Floating -->
+    <div id="aiChatButton" class="fixed bottom-6 right-24 z-50">
+        <button id="openAIChat" 
+                class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition transform hover:scale-110 duration-300 ai-chat-bubble group">
+            <i class="fas fa-robot text-2xl"></i>
+            <span class="hidden group-hover:inline ml-2 text-sm font-semibold">Ask AI</span>
+        </button>
+    </div>
+    
+    <!-- AI Chat Modal -->
+    <div id="aiChatModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[600px] flex flex-col overflow-hidden">
+            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-robot text-white text-xl"></i>
+                    <h3 class="text-white font-bold">Bantu AI Assistant</h3>
+                    <span class="bg-green-400 text-xs px-2 py-0.5 rounded-full text-white">Free</span>
+                </div>
+                <button id="closeAIChat" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div id="aiChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-900 min-h-[300px]">
+                <div class="flex justify-start">
+                    <div class="bg-gray-200 dark:bg-gray-700 rounded-lg px-3 py-2 max-w-[85%]">
+                        <p class="text-sm dark:text-white">👋 Hi! I'm Bantu AI. Ask me about:</p>
+                        <ul class="text-xs mt-1 list-disc list-inside text-gray-600 dark:text-gray-400">
+                            <li>ECZ exam preparation</li>
+                            <li>Study techniques</li>
+                            <li>Book recommendations</li>
+                            <li>Zambian education</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t dark:border-gray-700 p-3 bg-white dark:bg-gray-800">
+                <div class="flex gap-2">
+                    <input type="text" id="aiQuestion" 
+                           placeholder="Ask me anything..." 
+                           class="flex-1 px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:border-purple-500 text-sm">
+                    <button id="sendAiQuestion" 
+                            class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                    <i class="fas fa-info-circle"></i> Free AI assistant for Zambian students
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    {% include 'includes/header.html' %}
+    
+    <!-- Messages/Toasts -->
+    {% if messages %}
+    <div class="fixed top-20 right-4 z-50 space-y-2" id="toastContainer">
+        {% for message in messages %}
+        <div class="toast bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 max-w-sm border-l-4 
+            {% if message.tags == 'success' %}border-green-500{% elif message.tags == 'error' %}border-red-500{% elif message.tags == 'warning' %}border-yellow-500{% else %}border-blue-500{% endif %}">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    {% if message.tags == 'success' %}
+                        <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                    {% elif message.tags == 'error' %}
+                        <i class="fas fa-exclamation-circle text-red-500 text-xl"></i>
+                    {% elif message.tags == 'warning' %}
+                        <i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i>
+                    {% else %}
+                        <i class="fas fa-info-circle text-blue-500 text-xl"></i>
+                    {% endif %}
+                </div>
+                <div class="ml-3 flex-1">
+                    <p class="text-sm text-gray-700 dark:text-gray-300">{{ message }}</p>
+                </div>
+                <button class="ml-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onclick="this.parentElement.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Main Content -->
+    <main class="py-8 min-h-screen">
+        {% block content %}{% endblock %}
+    </main>
+    
+    {% include 'includes/footer.html' %}
+    
+    <!-- Scripts -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
+    <script>
+        // Initialize AOS
+        AOS.init({
+            duration: 1000,
+            once: true,
+            offset: 100
+        });
+        
+  // ============ LOADING SCREEN ============
+const loadingOverlay = document.getElementById('loadingOverlay');
+const loadingTitle = document.getElementById('loadingTitle');
+const loadingMessage = document.getElementById('loadingMessage');
+const loadingProgressBar = document.getElementById('loadingProgressBar');
+
+let loadingStartTime = Date.now();
+let loadingProgress = 0;
+let progressInterval;
+
+function startLoadingProgress() {
+    loadingProgress = 0;
+    if (loadingProgressBar) loadingProgressBar.style.width = '0%';
+    
+    progressInterval = setInterval(() => {
+        if (loadingProgress < 90) {
+            loadingProgress += Math.random() * 25;
+            if (loadingProgress > 90) loadingProgress = 90;
+            if (loadingProgressBar) loadingProgressBar.style.width = loadingProgress + '%';
+        }
+    }, 100); // Faster updates
+}
+
+function completeLoading() {
+    if (progressInterval) clearInterval(progressInterval);
+    
+    // Complete to 100%
+    if (loadingProgressBar) loadingProgressBar.style.width = '100%';
+    
+    // Fade out loading screen
+    setTimeout(() => {
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('loading-hidden');
+            setTimeout(() => {
+                loadingOverlay.style.display = 'none';
+            }, 300);
+        }
+    }, 200);
+}
+
+function showLoading(title = 'Loading...', message = 'Please wait...') {
+    if (loadingTitle) loadingTitle.textContent = title;
+    if (loadingMessage) loadingMessage.textContent = message;
+    
+    loadingOverlay.style.display = 'flex';
+    loadingOverlay.classList.remove('loading-hidden');
+    loadingStartTime = Date.now();
+    startLoadingProgress();
+}
+
+// Hide initial loading screen after 1.5 seconds
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        completeLoading();
+    }, 1500); // Exactly 1.5 seconds
+});
+
+// Intercept all link clicks
+document.addEventListener('click', function(e) {
+    let target = e.target;
+    while (target && target.tagName !== 'A') {
+        target = target.parentElement;
+    }
+    
+    if (target && target.tagName === 'A') {
+        const href = target.getAttribute('href');
+        const targetAttr = target.getAttribute('target');
+        
+        if (!href || 
+            href === '#' || 
+            href === 'javascript:void(0)' ||
+            targetAttr === '_blank' ||
+            target.hasAttribute('download')) {
+            return;
+        }
+        
+        showLoading('Loading...', 'Please wait...');
+        
+        // Force hide after 1.5 seconds
+        setTimeout(() => {
+            completeLoading();
+        }, 1500);
+    }
+});
+
+// Also handle form submissions
+document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function() {
+        showLoading('Processing...', 'Please wait...');
+        setTimeout(() => {
+            completeLoading();
+        }, 1500);
+    });
+});
+        
+        // Intercept all link clicks
+        document.addEventListener('click', function(e) {
+            let target = e.target;
+            while (target && target.tagName !== 'A') {
+                target = target.parentElement;
+            }
+            
+            if (target && target.tagName === 'A') {
+                const href = target.getAttribute('href');
+                const targetAttr = target.getAttribute('target');
+                
+                // Skip certain links
+                if (!href || 
+                    href === '#' || 
+                    href === 'javascript:void(0)' ||
+                    targetAttr === '_blank' ||
+                    target.hasAttribute('download')) {
+                    return;
+                }
+                
+                let title = 'Loading...';
+                let message = 'Please wait...';
+                
+                const linkText = target.textContent.toLowerCase();
+                if (linkText.includes('download')) {
+                    title = 'Preparing Download';
+                    message = 'Your file will start shortly';
+                } else if (linkText.includes('search')) {
+                    title = 'Searching';
+                    message = 'Finding results for you';
+                } else if (linkText.includes('login') || linkText.includes('sign in')) {
+                    title = 'Signing In';
+                    message = 'Redirecting to your account';
+                } else if (linkText.includes('register')) {
+                    title = 'Creating Account';
+                    message = 'Setting up your account';
+                } else if (linkText.includes('book') || linkText.includes('read')) {
+                    title = 'Loading Book';
+                    message = 'Preparing your reading experience';
+                }
+                
+                showLoading(title, message);
+            }
+        });
+        
+        // Also handle form submissions
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function() {
+                showLoading('Processing...', 'Please wait while we process your request');
+            });
+        });
+        
+        // Back to Top Button
+        const backToTopBtn = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopBtn.classList.remove('hidden');
+                backToTopBtn.classList.add('flex');
+            } else {
+                backToTopBtn.classList.remove('flex');
+                backToTopBtn.classList.add('hidden');
+            }
+        });
+        
+        backToTopBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        
+        // Dark Mode Functions
+        function initDarkMode() {
+            const savedMode = localStorage.getItem('darkMode');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedMode === 'true' || (savedMode === null && prefersDark)) {
+                document.documentElement.classList.add('dark');
+                document.cookie = "dark_mode=true; path=/";
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.cookie = "dark_mode=false; path=/";
+            }
+        }
+        
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('darkMode', 'false');
+                document.cookie = "dark_mode=false; path=/";
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('darkMode', 'true');
+                document.cookie = "dark_mode=true; path=/";
+            }
+            updateDarkModeButtons();
+        }
+        
+        function updateDarkModeButtons() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const buttons = document.querySelectorAll('.dark-mode-toggle');
+            buttons.forEach(btn => {
+                if (isDark) {
+                    btn.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+                } else {
+                    btn.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+                }
+            });
+        }
+        
+        initDarkMode();
+        
+        // AI Chat Functionality
+        const aiChatModal = document.getElementById('aiChatModal');
+        const openAIChat = document.getElementById('openAIChat');
+        const closeAIChat = document.getElementById('closeAIChat');
+        const sendBtn = document.getElementById('sendAiQuestion');
+        const aiQuestion = document.getElementById('aiQuestion');
+        const aiChatMessages = document.getElementById('aiChatMessages');
+        
+        function openChat() {
+            aiChatModal.classList.remove('hidden');
+            aiChatModal.classList.add('flex');
+            aiQuestion.focus();
+        }
+        
+        function closeChat() {
+            aiChatModal.classList.add('hidden');
+            aiChatModal.classList.remove('flex');
+        }
+        
+        function addAIMessage(message, isUser = false) {
+            const div = document.createElement('div');
+            div.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+            div.innerHTML = `
+                <div class="${isUser ? 'bg-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white'} rounded-lg px-3 py-2 max-w-[85%]">
+                    <p class="text-sm whitespace-pre-wrap">${escapeHtml(message)}</p>
+                </div>
+            `;
+            aiChatMessages.appendChild(div);
+            aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+        }
+        
+        function showAITyping() {
+            const div = document.createElement('div');
+            div.id = 'aiTyping';
+            div.className = 'flex justify-start';
+            div.innerHTML = `
+                <div class="bg-gray-200 dark:bg-gray-700 rounded-lg px-4 py-2">
+                    <div class="flex gap-1">
+                        <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                        <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                        <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                    </div>
+                </div>
+            `;
+            aiChatMessages.appendChild(div);
+            aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+        }
+        
+        function removeAITyping() {
+            const typing = document.getElementById('aiTyping');
+            if (typing) typing.remove();
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        async function sendAIQuestion() {
+            const question = aiQuestion.value.trim();
+            if (!question) return;
+            
+            addAIMessage(question, true);
+            aiQuestion.value = '';
+            showAITyping();
+            
+            try {
+                const response = await fetch('/ai-assistant/api/chat/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ question: question })
+                });
+                
+                const data = await response.json();
+                removeAITyping();
+                
+                if (data.success) {
+                    addAIMessage(data.answer, false);
+                } else if (data.limit_reached) {
+                    addAIMessage("⚠️ Daily limit reached. Please try again tomorrow!", false);
+                } else {
+                    addAIMessage("Sorry, I encountered an error. Please try again.", false);
+                }
+            } catch (error) {
+                removeAITyping();
+                addAIMessage("Network error. Please check your connection.", false);
+            }
+        }
+        
+        function getCsrfToken() {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    cookie = cookie.trim();
+                    if (cookie.startsWith('csrftoken=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(10));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        if (openAIChat) openAIChat.addEventListener('click', openChat);
+        if (closeAIChat) closeAIChat.addEventListener('click', closeChat);
+        if (sendBtn) sendBtn.addEventListener('click', sendAIQuestion);
+        if (aiQuestion) {
+            aiQuestion.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendAIQuestion();
+            });
+        }
+        
+        aiChatModal.addEventListener('click', (e) => {
+            if (e.target === aiChatModal) closeChat();
+        });
+        
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            if (menu) {
+                menu.classList.toggle('hidden');
+                const icon = document.querySelector('#mobileMenuToggle i');
+                if (icon) {
+                    if (menu.classList.contains('hidden')) {
+                        icon.classList.remove('fa-times');
+                        icon.classList.add('fa-bars');
+                    } else {
+                        icon.classList.remove('fa-bars');
+                        icon.classList.add('fa-times');
+                    }
+                }
+            }
+        }
+        
+        setTimeout(() => {
+            const toasts = document.querySelectorAll('.toast');
+            toasts.forEach(toast => {
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }, 4000);
+            });
+        }, 1000);
+        
+        const currentLocation = window.location.pathname;
+        document.querySelectorAll('.nav-link').forEach(link => {
+            const linkPath = link.getAttribute('href');
+            if (linkPath && currentLocation === linkPath) {
+                link.classList.add('active');
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

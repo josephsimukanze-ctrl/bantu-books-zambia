@@ -1,0 +1,574 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Upgrade Account - Bantu Books Zambia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pricing-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        cursor: pointer;
+    }
+    
+    .pricing-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 25px 30px -12px rgba(0, 0, 0, 0.25);
+    }
+    
+    .pricing-card.selected {
+        border: 2px solid #059669;
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .pricing-card.selected::before {
+        content: '✓ SELECTED';
+        position: absolute;
+        top: -10px;
+        right: 20px;
+        background: #059669;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: bold;
+    }
+    
+    .benefit-item {
+        transition: all 0.2s ease;
+    }
+    
+    .benefit-item:hover {
+        transform: translateX(4px);
+        color: #059669;
+    }
+    
+    .payment-modal {
+        transition: all 0.3s ease;
+    }
+    
+    .payment-method {
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .payment-method:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .payment-method.selected {
+        border: 2px solid #059669;
+        background-color: #f0fdf4;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-slide-in {
+        animation: slideIn 0.3s ease-out;
+    }
+    
+    .bank-select {
+        transition: all 0.2s ease;
+    }
+    
+    .bank-select:focus {
+        border-color: #059669;
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+    }
+    
+    /* Loading Overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .loading-overlay.active {
+        display: flex;
+    }
+    
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid rgba(5, 150, 105, 0.2);
+        border-radius: 50%;
+        border-top-color: #059669;
+        animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+        color: white;
+        margin-top: 1rem;
+        font-size: 1rem;
+    }
+    
+    .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1100;
+        animation: slideInRight 0.3s ease-out;
+    }
+    
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-12">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-bold text-gray-800 mb-4 text-center">Upgrade Your Account</h1>
+        <p class="text-xl text-gray-600 text-center mb-12">Choose the plan that works best for you</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for key, plan in plans.items %}
+            <div class="pricing-card bg-white rounded-xl shadow-lg overflow-hidden {% if key == 'yearly' %}border-2 border-green-500{% endif %}" data-plan="{{ key }}" data-price="{{ plan.price }}" onclick="selectPlan('{{ key }}', {{ plan.price }})">
+                {% if key == 'yearly' %}
+                <div class="bg-gradient-to-r from-green-500 to-green-600 text-white text-center py-2 text-sm font-semibold">
+                    <i class="fas fa-star mr-1"></i> BEST VALUE
+                </div>
+                {% endif %}
+                <div class="p-6">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">{{ plan.name }}</h3>
+                    <div class="text-3xl font-bold text-green-600 mb-2">
+                        K{{ plan.price }}
+                        {% if plan.duration %}
+                        <span class="text-sm text-gray-500">/{{ plan.duration }} month{% if plan.duration > 1 %}s{% endif %}</span>
+                        {% endif %}
+                    </div>
+                    {% if plan.savings and plan.savings > 0 %}
+                    <p class="text-sm text-green-600 mb-4">Save K{{ plan.savings }} annually!</p>
+                    {% endif %}
+                    <ul class="space-y-2 mb-6">
+                        {% for feature in plan.features %}
+                        <li class="benefit-item flex items-center text-sm">
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                            {{ feature }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Payment Modal -->
+        <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 payment-modal animate-slide-in max-h-[90vh] overflow-y-auto">
+                <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 rounded-t-2xl sticky top-0">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-white">Complete Payment</h3>
+                        <button onclick="closePaymentModal()" class="text-white hover:text-gray-200">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <p class="text-green-100 text-sm mt-1">Choose your payment method</p>
+                </div>
+                
+                <div class="p-6">
+                    <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Plan:</span>
+                            <span id="selectedPlanName" class="font-semibold text-gray-800"></span>
+                        </div>
+                        <div class="flex justify-between items-center mt-1">
+                            <span class="text-gray-600">Amount:</span>
+                            <span id="selectedPlanPrice" class="text-2xl font-bold text-green-600"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Methods -->
+                    <div class="space-y-3 mb-6">
+                        <div class="payment-method border rounded-lg p-3 flex items-center justify-between" onclick="selectPaymentMethod('airtel')">
+                            <div class="flex items-center">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Airtel_logo.svg/1200px-Airtel_logo.svg.png" alt="Airtel" class="w-10 h-10 mr-3 object-contain">
+                                <div>
+                                    <p class="font-semibold text-gray-800">Airtel Money</p>
+                                    <p class="text-xs text-gray-500">Pay using Airtel Money</p>
+                                </div>
+                            </div>
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded-full payment-radio" data-method="airtel"></div>
+                        </div>
+                        
+                        <div class="payment-method border rounded-lg p-3 flex items-center justify-between" onclick="selectPaymentMethod('mtn')">
+                            <div class="flex items-center">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/MTN_Group_Logo.svg/1200px-MTN_Group_Logo.svg.png" alt="MTN" class="w-10 h-10 mr-3 object-contain">
+                                <div>
+                                    <p class="font-semibold text-gray-800">MTN Mobile Money</p>
+                                    <p class="text-xs text-gray-500">Pay using MTN Mobile Money</p>
+                                </div>
+                            </div>
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded-full payment-radio" data-method="mtn"></div>
+                        </div>
+                        
+                        <div class="payment-method border rounded-lg p-3 flex items-center justify-between" onclick="selectPaymentMethod('zamtel')">
+                            <div class="flex items-center">
+                                <img src="https://play-lh.googleusercontent.com/GCdQcA72bQ0TO4ci9hZ5FRT9Yr1h3F2juC0aHTJ6Z9AVnQeW4LS4T5PkM3sAqL8jvQg" alt="Zamtel" class="w-10 h-10 mr-3 object-contain">
+                                <div>
+                                    <p class="font-semibold text-gray-800">Zamtel Kwacha</p>
+                                    <p class="text-xs text-gray-500">Pay using Zamtel Kwacha</p>
+                                </div>
+                            </div>
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded-full payment-radio" data-method="zamtel"></div>
+                        </div>
+                        
+                        <div class="payment-method border rounded-lg p-3 flex items-center justify-between" onclick="selectPaymentMethod('bank')">
+                            <div class="flex items-center">
+                                <i class="fas fa-university text-3xl text-gray-600 mr-3"></i>
+                                <div>
+                                    <p class="font-semibold text-gray-800">Bank Transfer</p>
+                                    <p class="text-xs text-gray-500">Pay via bank transfer</p>
+                                </div>
+                            </div>
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded-full payment-radio" data-method="bank"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Details (dynamic) -->
+                    <div id="paymentDetailsContainer" class="mb-4 hidden">
+                        <!-- Mobile Money Details -->
+                        <div id="mobileMoneyFields" class="hidden">
+                            <label id="paymentDetailsLabel" class="block text-gray-700 font-semibold mb-2">Phone Number</label>
+                            <input type="tel" id="paymentDetailsInput" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500" placeholder="Enter phone number (e.g., 0977123456)">
+                            <p id="paymentDetailsHint" class="text-xs text-gray-500 mt-1">Enter your mobile money registered phone number</p>
+                        </div>
+                        
+                        <!-- Bank Transfer Details -->
+                        <div id="bankFields" class="hidden">
+                            <label class="block text-gray-700 font-semibold mb-2">Select Bank</label>
+                            <select id="bankSelect" class="bank-select w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500 mb-3">
+                                <option value="">-- Select a bank --</option>
+                                <option value="zanaco">ZANACO (Zambia National Commercial Bank)</option>
+                                <option value="absa">ABSA Bank Zambia</option>
+                                <option value="stanbic">Stanbic Bank Zambia</option>
+                                <option value="standard_chartered">Standard Chartered Bank Zambia</option>
+                                <option value="fnb">FNB Zambia (First National Bank)</option>
+                                <option value="cavmont">Cavmont Bank</option>
+                                <option value="indbank">Indo-Zambia Bank (Indbank)</option>
+                                <option value="access">Access Bank Zambia</option>
+                                <option value="atlantis">Atlantis Bank Zambia</option>
+                                <option value="ecobank">Ecobank Zambia</option>
+                                <option value="citibank">Citibank Zambia</option>
+                                <option value="investrust">Investrust Bank</option>
+                            </select>
+                            
+                            <div id="bankAccountFields" class="hidden">
+                                <label class="block text-gray-700 font-semibold mb-2">Account Name</label>
+                                <input type="text" id="accountName" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500 mb-3" placeholder="Enter account holder name">
+                                
+                                <label class="block text-gray-700 font-semibold mb-2">Account Number</label>
+                                <input type="text" id="accountNumber" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500 mb-3" placeholder="Enter bank account number">
+                                
+                                <label class="block text-gray-700 font-semibold mb-2">Branch</label>
+                                <input type="text" id="branchName" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500" placeholder="Enter bank branch">
+                                
+                                <p class="text-xs text-gray-500 mt-2">
+                                    <i class="fas fa-info-circle mr-1"></i> 
+                                    Our bank details will be provided after you confirm the payment
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button onclick="processPayment()" class="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 rounded-xl hover:from-green-700 hover:to-emerald-700 transition">
+                            <i class="fas fa-lock mr-2"></i> Pay Now
+                        </button>
+                        <button onclick="closePaymentModal()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-300 transition">
+                            Cancel
+                        </button>
+                    </div>
+                    
+                    <p class="text-center text-xs text-gray-500 mt-4">
+                        <i class="fas fa-shield-alt mr-1"></i> Secure payment powered by Bantu Books Zambia
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="text-center">
+                <div class="loading-spinner mx-auto"></div>
+                <p class="loading-text">Processing your payment...</p>
+            </div>
+        </div>
+        
+        {% if current_user_type == 'basic' %}
+        <div class="mt-12 bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <div class="flex items-start gap-4">
+                <i class="fas fa-info-circle text-blue-500 text-xl"></i>
+                <div>
+                    <h3 class="text-xl font-bold text-blue-800 mb-2">Current Plan: Basic (Mumbi)</h3>
+                    <p class="text-blue-700">You get 20 free downloads per day. Upgrade to unlock unlimited access!</p>
+                </div>
+            </div>
+        </div>
+        {% elif current_user_type == 'premium' %}
+        <div class="mt-12 bg-green-50 border border-green-200 rounded-lg p-6">
+            <div class="flex items-start gap-4">
+                <i class="fas fa-crown text-green-500 text-xl"></i>
+                <div>
+                    <h3 class="text-xl font-bold text-green-800 mb-2">Current Plan: Premium (Chibombo)</h3>
+                    <p class="text-green-700">You have unlimited access to all content!</p>
+                    <p class="text-sm text-green-600 mt-1">Valid until: {{ user.subscription_expiry|date:"F d, Y"|default:"Never expires" }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    let selectedPlan = null;
+    let selectedPrice = null;
+    let selectedPaymentMethod = null;
+    
+    function selectPlan(plan, price) {
+        // Remove selected class from all cards
+        document.querySelectorAll('.pricing-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        // Add selected class to clicked card
+        const card = document.querySelector(`.pricing-card[data-plan="${plan}"]`);
+        card.classList.add('selected');
+        
+        selectedPlan = plan;
+        selectedPrice = price;
+        
+        // Get plan name
+        let planName = '';
+        switch(plan) {
+            case 'monthly': planName = 'Monthly Premium'; break;
+            case 'quarterly': planName = 'Quarterly Premium'; break;
+            case 'yearly': planName = 'Yearly Premium'; break;
+            case 'lifetime': planName = 'Lifetime Access'; break;
+        }
+        
+        document.getElementById('selectedPlanName').innerText = planName;
+        document.getElementById('selectedPlanPrice').innerHTML = `K${price}`;
+        
+        // Show payment modal
+        document.getElementById('paymentModal').classList.add('flex');
+        document.getElementById('paymentModal').classList.remove('hidden');
+    }
+    
+    function selectPaymentMethod(method) {
+        selectedPaymentMethod = method;
+        
+        // Update radio buttons
+        document.querySelectorAll('.payment-radio').forEach(radio => {
+            radio.classList.remove('border-green-500');
+            radio.classList.add('border-gray-300');
+            radio.innerHTML = '';
+        });
+        
+        const selectedRadio = document.querySelector(`.payment-radio[data-method="${method}"]`);
+        selectedRadio.classList.remove('border-gray-300');
+        selectedRadio.classList.add('border-green-500');
+        selectedRadio.innerHTML = '<div class="w-3 h-3 bg-green-500 rounded-full mx-auto"></div>';
+        
+        // Update payment details form
+        const container = document.getElementById('paymentDetailsContainer');
+        const mobileMoneyFields = document.getElementById('mobileMoneyFields');
+        const bankFields = document.getElementById('bankFields');
+        
+        container.classList.remove('hidden');
+        
+        if (method === 'bank') {
+            mobileMoneyFields.classList.add('hidden');
+            bankFields.classList.remove('hidden');
+        } else {
+            mobileMoneyFields.classList.remove('hidden');
+            bankFields.classList.add('hidden');
+            
+            const label = document.getElementById('paymentDetailsLabel');
+            const input = document.getElementById('paymentDetailsInput');
+            const hint = document.getElementById('paymentDetailsHint');
+            
+            switch(method) {
+                case 'airtel':
+                    label.textContent = 'Airtel Money Number';
+                    input.placeholder = 'Enter Airtel Money number (e.g., 0977123456)';
+                    hint.textContent = 'Enter your Airtel Money registered phone number';
+                    break;
+                case 'mtn':
+                    label.textContent = 'MTN Mobile Money Number';
+                    input.placeholder = 'Enter MTN number (e.g., 0977123456)';
+                    hint.textContent = 'Enter your MTN Mobile Money registered phone number';
+                    break;
+                case 'zamtel':
+                    label.textContent = 'Zamtel Kwacha Number';
+                    input.placeholder = 'Enter Zamtel number (e.g., 0955123456)';
+                    hint.textContent = 'Enter your Zamtel Kwacha registered phone number';
+                    break;
+            }
+        }
+    }
+    
+    function closePaymentModal() {
+        document.getElementById('paymentModal').classList.add('hidden');
+        document.getElementById('paymentModal').classList.remove('flex');
+    }
+    
+    function processPayment() {
+        if (!selectedPlan) {
+            alert('Please select a plan first');
+            return;
+        }
+        
+        if (!selectedPaymentMethod) {
+            alert('Please select a payment method');
+            return;
+        }
+        
+        // Get payment details
+        let paymentDetails = {};
+        let phoneNumber = null;
+        
+        if (selectedPaymentMethod === 'bank') {
+            const bankSelect = document.getElementById('bankSelect');
+            const accountName = document.getElementById('accountName');
+            const accountNumber = document.getElementById('accountNumber');
+            const branchName = document.getElementById('branchName');
+            
+            if (!bankSelect.value) {
+                alert('Please select a bank');
+                return;
+            }
+            if (!accountName.value) {
+                alert('Please enter account holder name');
+                return;
+            }
+            if (!accountNumber.value) {
+                alert('Please enter account number');
+                return;
+            }
+            
+            paymentDetails = {
+                bank: bankSelect.options[bankSelect.selectedIndex].text,
+                account_name: accountName.value,
+                account_number: accountNumber.value,
+                branch: branchName.value
+            };
+        } else {
+            phoneNumber = document.getElementById('paymentDetailsInput').value;
+            if (!phoneNumber) {
+                alert('Please enter your phone number');
+                return;
+            }
+            paymentDetails = {
+                phone_number: phoneNumber
+            };
+        }
+        
+        // Show loading overlay
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        loadingOverlay.classList.add('active');
+        
+        // Close payment modal
+        closePaymentModal();
+        
+        // Send payment request
+        fetch('{% url "accounts:process_upgrade_payment" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                plan: selectedPlan,
+                payment_method: selectedPaymentMethod,
+                phone_number: phoneNumber,
+                bank_details: paymentDetails
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            loadingOverlay.classList.remove('active');
+            
+            if (data.success) {
+                showToast('✅ Upgrade successful! Redirecting to dashboard...', 'success');
+                setTimeout(() => {
+                    window.location.href = data.redirect_url;
+                }, 2000);
+            } else {
+                showToast(data.error || 'Payment failed. Please try again.', 'error');
+            }
+        })
+        .catch(error => {
+            loadingOverlay.classList.remove('active');
+            showToast('An error occurred. Please try again.', 'error');
+            console.error('Error:', error);
+        });
+    }
+    
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white px-6 py-3 rounded-lg shadow-lg`;
+        toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>${message}`;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Show bank account fields when a bank is selected
+    document.getElementById('bankSelect').addEventListener('change', function() {
+        const bankFields = document.getElementById('bankAccountFields');
+        if (this.value) {
+            bankFields.classList.remove('hidden');
+        } else {
+            bankFields.classList.add('hidden');
+        }
+    });
+</script>
+{% endblock %}

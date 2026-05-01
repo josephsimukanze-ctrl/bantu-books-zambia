@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Book Requests - Staff Panel{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Manage Book Requests</h1>
+        <div class="flex gap-3">
+            <a href="{% url 'downloads:dashboard' %}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+                <i class="fas fa-chart-line mr-2"></i> Dashboard
+            </a>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <div class="bg-white rounded-lg p-4 text-center shadow hover:shadow-lg transition">
+            <div class="text-2xl font-bold text-gray-800">{{ total_requests }}</div>
+            <p class="text-gray-600 text-sm">Total Requests</p>
+        </div>
+        <div class="bg-yellow-50 rounded-lg p-4 text-center shadow hover:shadow-lg transition">
+            <div class="text-2xl font-bold text-yellow-600">{{ pending_count }}</div>
+            <p class="text-gray-600 text-sm">Pending</p>
+        </div>
+        <div class="bg-blue-50 rounded-lg p-4 text-center shadow hover:shadow-lg transition">
+            <div class="text-2xl font-bold text-blue-600">{{ approved_count }}</div>
+            <p class="text-gray-600 text-sm">Approved</p>
+        </div>
+        <div class="bg-purple-50 rounded-lg p-4 text-center shadow hover:shadow-lg transition">
+            <div class="text-2xl font-bold text-purple-600">{{ processing_count }}</div>
+            <p class="text-gray-600 text-sm">Processing</p>
+        </div>
+        <div class="bg-green-50 rounded-lg p-4 text-center shadow hover:shadow-lg transition">
+            <div class="text-2xl font-bold text-green-600">{{ completed_count }}</div>
+            <p class="text-gray-600 text-sm">Completed</p>
+        </div>
+    </div>
+    
+    <!-- Filter Tabs -->
+    <div class="mb-6">
+        <div class="border-b border-gray-200">
+            <nav class="flex -mb-px space-x-8">
+                <button onclick="filterRequests('all')" class="filter-btn py-2 px-1 border-b-2 font-medium text-sm transition" data-filter="all">
+                    All Requests
+                </button>
+                <button onclick="filterRequests('pending')" class="filter-btn py-2 px-1 border-b-2 font-medium text-sm transition" data-filter="pending">
+                    Pending
+                </button>
+                <button onclick="filterRequests('approved')" class="filter-btn py-2 px-1 border-b-2 font-medium text-sm transition" data-filter="approved">
+                    Approved
+                </button>
+                <button onclick="filterRequests('processing')" class="filter-btn py-2 px-1 border-b-2 font-medium text-sm transition" data-filter="processing">
+                    Processing
+                </button>
+                <button onclick="filterRequests('completed')" class="filter-btn py-2 px-1 border-b-2 font-medium text-sm transition" data-filter="completed">
+                    Completed
+                </button>
+                <button onclick="filterRequests('rejected')" class="filter-btn py-2 px-1 border-b-2 font-medium text-sm transition" data-filter="rejected">
+                    Rejected
+                </button>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Requests List -->
+    <div id="requestsList" class="space-y-4">
+        {% for req in all_requests %}
+        <div class="request-item bg-white rounded-lg shadow-md overflow-hidden" data-status="{{ req.status }}">
+            <div class="p-6">
+                <div class="flex flex-wrap justify-between items-start gap-4">
+                    <!-- Request Info -->
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h3 class="text-xl font-bold text-gray-800">{{ req.title }}</h3>
+                            <span class="px-2 py-1 rounded text-xs font-semibold
+                                {% if req.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% elif req.status == 'approved' %}bg-blue-100 text-blue-800
+                                {% elif req.status == 'processing' %}bg-purple-100 text-purple-800
+                                {% elif req.status == 'completed' %}bg-green-100 text-green-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ req.get_status_display }}
+                            </span>
+                            <span class="px-2 py-1 rounded text-xs font-semibold
+                                {% if req.priority == 'urgent' %}bg-red-100 text-red-800
+                                {% elif req.priority == 'high' %}bg-orange-100 text-orange-800
+                                {% elif req.priority == 'medium' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ req.get_priority_display }} Priority
+                            </span>
+                        </div>
+                        
+                        <p class="text-gray-600 mb-2">
+                            <i class="fas fa-user mr-2"></i> Requested by: <strong>{{ req.user.username }}</strong> ({{ req.user.email }})
+                        </p>
+                        {% if req.author %}
+                        <p class="text-gray-600 mb-2">
+                            <i class="fas fa-user-edit mr-2"></i> Author: {{ req.author }}
+                        </p>
+                        {% endif %}
+                        {% if req.isbn %}
+                        <p class="text-gray-600 mb-2">
+                            <i class="fas fa-barcode mr-2"></i> ISBN: {{ req.isbn }}
+                        </p>
+                        {% endif %}
+                        {% if req.category %}
+                        <p class="text-gray-600 mb-2">
+                            <i class="fas fa-folder mr-2"></i> Category: {{ req.category.name }}
+                        </p>
+                        {% endif %}
+                        {% if req.reason %}
+                        <p class="text-gray-600 mb-2">
+                            <i class="fas fa-quote-left mr-2"></i> Reason: {{ req.reason }}
+                        </p>
+                        {% endif %}
+                        {% if req.description %}
+                        <p class="text-gray-600 mb-2">
+                            <i class="fas fa-align-left mr-2"></i> Additional Info: {{ req.description }}
+                        </p>
+                        {% endif %}
+                        
+                        <p class="text-gray-400 text-sm mt-2">
+                            <i class="far fa-calendar-alt mr-1"></i> Requested: {{ req.created_at|date:"M d, Y H:i" }}
+                        </p>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col gap-2 min-w-[200px]">
+                        {% if req.status == 'pending' %}
+                            <button onclick="approveRequest({{ req.id }})" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+                                <i class="fas fa-check mr-2"></i> Approve Request
+                            </button>
+                            <button onclick="rejectRequest({{ req.id }})" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">
+                                <i class="fas fa-times mr-2"></i> Reject Request
+                            </button>
+                        {% elif req.status == 'approved' %}
+                            <button onclick="openAddBookModal({{ req.id }})" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                                <i class="fas fa-plus mr-2"></i> Add Book & Send
+                            </button>
+                        {% elif req.status == 'completed' and req.assigned_book %}
+                            <a href="{% url 'books:book_detail' req.assigned_book.slug %}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-center">
+                                <i class="fas fa-eye mr-2"></i> View Added Book
+                            </a>
+                        {% endif %}
+                        
+                       <button onclick="window.location.href='{% url 'books:view_user_profile' req.user.id %}'" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+    <i class="fas fa-user mr-2"></i> View Profile
+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-12 bg-white rounded-lg shadow">
+            <i class="fas fa-inbox text-6xl text-gray-400 mb-4"></i>
+            <p class="text-gray-600 text-lg">No book requests found.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add Book Modal -->
+<div id="addBookModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Add Book to Fulfill Request</h3>
+                <button onclick="closeAddBookModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="addBookForm" method="POST" action="{% url 'books:admin_add_book_to_request' 0 %}">
+                {% csrf_token %}
+                <input type="hidden" id="requestId" name="request_id">
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">Select a Book</label>
+                    <select name="book_id" id="bookSelect" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+                        <option value="">-- Select a book --</option>
+                        {% for book in available_books %}
+                        <option value="{{ book.id }}">{{ book.title }} by {{ book.author }} ({{ book.category.name }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                        <i class="fas fa-paper-plane mr-2"></i> Assign & Send Notification
+                    </button>
+                    <button type="button" onclick="closeAddBookModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Filter requests by status
+    function filterRequests(status) {
+        const items = document.querySelectorAll('.request-item');
+        let visibleCount = 0;
+        
+        items.forEach(item => {
+            if (status === 'all' || item.dataset.status === status) {
+                item.style.display = 'block';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Update active tab style
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            if (btn.dataset.filter === status) {
+                btn.classList.add('border-green-600', 'text-green-600');
+                btn.classList.remove('border-transparent', 'text-gray-500');
+            } else {
+                btn.classList.remove('border-green-600', 'text-green-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            }
+        });
+    }
+    
+    // Approve request via AJAX
+    function approveRequest(requestId) {
+        if (confirm('Are you sure you want to approve this request?')) {
+            fetch(`/books/api/approve-request/${requestId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            });
+        }
+    }
+    
+    // Reject request via AJAX
+    function rejectRequest(requestId) {
+        if (confirm('Are you sure you want to reject this request?')) {
+            fetch(`/books/api/reject-request/${requestId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            });
+        }
+    }
+    
+    // Open add book modal
+    function openAddBookModal(requestId) {
+        document.getElementById('requestId').value = requestId;
+        document.getElementById('addBookForm').action = `/books/admin/add-book-to-request/${requestId}/`;
+        document.getElementById('addBookModal').classList.add('flex');
+        document.getElementById('addBookModal').classList.remove('hidden');
+    }
+    
+    // Close add book modal
+    function closeAddBookModal() {
+        document.getElementById('addBookModal').classList.add('hidden');
+        document.getElementById('addBookModal').classList.remove('flex');
+    }
+    
+    // Show user info
+    function showUserInfo(userId) {
+        window.location.href = `/admin/accounts/user/${userId}/change/`;
+    }
+</script>
+{% endblock %}

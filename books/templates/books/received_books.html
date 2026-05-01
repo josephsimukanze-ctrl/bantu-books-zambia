@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Books Received - Bantu Books Zambia{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Books Received</h1>
+    <p class="text-gray-600 mb-6">Books that were added to our library based on your requests</p>
+    
+    {% if received_books %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for req in received_books %}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+            <div class="relative">
+                {% if req.assigned_book.cover_image %}
+                    <img src="{{ req.assigned_book.cover_image.url }}" alt="{{ req.assigned_book.title }}" class="w-full h-48 object-cover">
+                {% else %}
+                    <div class="w-full h-48 bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+                        <i class="fas fa-book text-5xl text-green-600"></i>
+                    </div>
+                {% endif %}
+                <div class="absolute top-2 right-2">
+                    <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
+                        <i class="fas fa-check-circle mr-1"></i> Received
+                    </span>
+                </div>
+            </div>
+            <div class="p-4">
+                <h3 class="font-bold text-lg mb-1">{{ req.assigned_book.title }}</h3>
+                <p class="text-gray-600 text-sm mb-2">{{ req.assigned_book.author }}</p>
+                <div class="flex justify-between items-center mt-3">
+                    {% if req.assigned_book.is_free %}
+                        <span class="text-green-600 font-semibold">Free</span>
+                    {% else %}
+                        <span class="text-green-600 font-bold">K{{ req.assigned_book.price }}</span>
+                    {% endif %}
+                    <div class="flex gap-2">
+                        <a href="{% url 'books:book_detail' req.assigned_book.slug %}" class="bg-green-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-green-700 transition">
+                            <i class="fas fa-eye mr-1"></i> View
+                        </a>
+                        <a href="{% url 'downloads:download_book' req.assigned_book.slug %}" class="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition">
+                            <i class="fas fa-download mr-1"></i> Download
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12 bg-white rounded-lg shadow">
+        <i class="fas fa-gift text-6xl text-gray-400 mb-4"></i>
+        <h3 class="text-xl font-bold text-gray-700 mb-2">No Books Received Yet</h3>
+        <p class="text-gray-500 mb-6">When your requested books are approved and added to our library, they will appear here.</p>
+        <a href="{% url 'books:request_book' %}" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition inline-block">
+            <i class="fas fa-plus mr-2"></i> Request a Book
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

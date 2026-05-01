@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Payment Transactions - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .status-pending { background: #fef3c7; color: #d97706; }
+    .status-completed { background: #dcfce7; color: #059669; }
+    .status-failed { background: #fee2e2; color: #dc2626; }
+    .status-cancelled { background: #f3f4f6; color: #6b7280; }
+    .status-processing { background: #dbeafe; color: #2563eb; }
+    
+    .filter-bar {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Payment Transactions</h1>
+            <p class="text-gray-600">Manage and view all payment transactions</p>
+        </div>
+        
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <form method="get" class="flex flex-wrap gap-4 items-end">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select name="status" class="border rounded-lg px-3 py-2 focus:outline-none focus:border-green-500">
+                        <option value="">All Status</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Plan Type</label>
+                    <select name="plan" class="border rounded-lg px-3 py-2 focus:outline-none focus:border-green-500">
+                        <option value="">All Plans</option>
+                        {% for value, label in plan_choices %}
+                        <option value="{{ value }}" {% if plan_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+                        <i class="fas fa-filter mr-2"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'accounts:admin_subscription_payments' %}" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition ml-2">
+                        <i class="fas fa-undo mr-2"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Summary Stats -->
+        <div class="bg-white rounded-xl shadow-md p-4 mb-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center">
+                    <p class="text-gray-500 text-sm">Total Transactions</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ transactions.paginator.count|intcomma }}</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-gray-500 text-sm">Total Amount</p>
+                    <p class="text-2xl font-bold text-green-600">K{{ total_amount|floatformat:2|intcomma }}</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-gray-500 text-sm">Pending</p>
+                    <p class="text-2xl font-bold text-orange-600">{{ transactions|length }}</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-gray-500 text-sm">Completed</p>
+                    <p class="text-2xl font-bold text-green-600">{{ transactions|length }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Transactions Table -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transaction ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment Method</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        {% for transaction in transactions %}
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-6 py-4 text-sm font-mono">{{ transaction.transaction_id|truncatechars:15 }}</td>
+                            <td class="px-6 py-4">
+                                <div>
+                                    <p class="font-medium">{{ transaction.user.email|truncatechars:25 }}</p>
+                                    <p class="text-xs text-gray-500">{{ transaction.user.user_type|title }}</p>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 font-semibold text-green-600">K{{ transaction.amount|floatformat:2 }}</td>
+                            <td class="px-6 py-4 capitalize">{{ transaction.get_plan_display }}</td>
+                            <td class="px-6 py-4 capitalize">{{ transaction.payment_method|default:"N/A" }}</td>
+                            <td class="px-6 py-4">
+                                <span class="status-badge status-{{ transaction.status }}">
+                                    {{ transaction.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">{{ transaction.created_at|date:"M d, Y H:i" }}</td>
+                            <td class="px-6 py-4">
+                                <button onclick="viewTransaction('{{ transaction.transaction_id }}')" class="text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="px-6 py-8 text-center text-gray-500">No transactions found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if transactions.has_other_pages %}
+            <div class="px-6 py-4 border-t flex justify-between items-center flex-wrap gap-4">
+                <div class="text-sm text-gray-500">
+                    Showing {{ transactions.start_index }} to {{ transactions.end_index }} of {{ transactions.paginator.count }} transactions
+                </div>
+                <div class="flex gap-2">
+                    {% if transactions.has_previous %}
+                    <a href="?page={{ transactions.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if plan_filter %}&plan={{ plan_filter }}{% endif %}" 
+                       class="px-3 py-1 border rounded-lg hover:bg-gray-50 transition">← Previous</a>
+                    {% endif %}
+                    
+                    <span class="px-3 py-1 bg-green-600 text-white rounded-lg">{{ transactions.number }}</span>
+                    
+                    {% if transactions.has_next %}
+                    <a href="?page={{ transactions.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if plan_filter %}&plan={{ plan_filter }}{% endif %}" 
+                       class="px-3 py-1 border rounded-lg hover:bg-gray-50 transition">Next →</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function viewTransaction(transactionId) {
+    alert(`Viewing transaction: ${transactionId}\n\nFull transaction details would be shown in a modal.`);
+}
+</script>
+{% endblock %}

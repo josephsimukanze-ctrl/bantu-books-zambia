@@ -1,0 +1,434 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Categories - Bantu Books Zambia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .category-card {
+        transition: all 0.3s ease;
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    }
+    
+    .category-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .category-image {
+        height: 160px;
+        background-size: cover;
+        background-position: center;
+        position: relative;
+    }
+    
+    .category-image-placeholder {
+        height: 160px;
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .image-preview {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 0.5rem;
+    }
+    
+    .level-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+    }
+    
+    .modal {
+        transition: opacity 0.3s ease;
+    }
+    
+    .modal.show {
+        display: flex !important;
+        animation: fadeIn 0.3s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .toast-notification {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        animation: slideInRight 0.3s ease-out;
+    }
+    
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Manage Categories</h1>
+                <p class="text-gray-600 text-sm">Organize your books with hierarchical categories</p>
+            </div>
+            <button onclick="openAddModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2">
+                <i class="fas fa-plus"></i>
+                Add Category
+            </button>
+        </div>
+        
+        <!-- Categories Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for category in categories %}
+            <div class="category-card" data-category-id="{{ category.id }}">
+                <!-- Category Image -->
+                {% if category.cover_image %}
+                <div class="category-image" style="background-image: url('{{ category.cover_image.url }}');">
+                    <span class="level-badge">
+                        Level {{ category.level }} 
+                        {% if category.level == 0 %}📁{% elif category.level == 1 %}📂{% else %}📄{% endif %}
+                    </span>
+                </div>
+                {% else %}
+                <div class="category-image-placeholder">
+                    <i class="fas fa-folder-open text-5xl text-gray-400"></i>
+                    <span class="level-badge">
+                        Level {{ category.level }}
+                        {% if category.level == 0 %}📁{% elif category.level == 1 %}📂{% else %}📄{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+                
+                <!-- Category Info -->
+                <div class="p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-bold text-gray-800">{{ category.name }}</h3>
+                            <p class="text-xs text-gray-500">{{ category.slug }}</p>
+                        </div>
+                        <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                            {{ category.books.count }} books
+                        </span>
+                    </div>
+                    
+                    {% if category.description %}
+                    <p class="text-sm text-gray-500 mb-3 line-clamp-2">{{ category.description }}</p>
+                    {% endif %}
+                    
+                    {% if category.parent %}
+                    <p class="text-xs text-gray-400 mb-3">
+                        <i class="fas fa-folder-open mr-1"></i> Parent: {{ category.parent.name }}
+                    </p>
+                    {% endif %}
+                    
+                    <div class="flex gap-2 mt-3 pt-3 border-t">
+                        <button onclick="editCategory({{ category.id }})" class="flex-1 bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-600 transition">
+                            <i class="fas fa-edit mr-1"></i> Edit
+                        </button>
+                        <button onclick="deleteCategory({{ category.id }}, '{{ category.name }}')" class="flex-1 bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-red-600 transition">
+                            <i class="fas fa-trash mr-1"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full text-center py-12 bg-white rounded-xl shadow">
+                <i class="fas fa-folder-open text-6xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500">No categories yet. Click "Add Category" to create one.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Category Modal -->
+<div id="categoryModal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+            <h3 id="modalTitle" class="text-xl font-bold text-gray-800">Add Category</h3>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <form id="categoryForm" method="post" enctype="multipart/form-data" class="p-6">
+            {% csrf_token %}
+            <input type="hidden" name="category_id" id="categoryId">
+            
+            <!-- Category Name -->
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Category Name *</label>
+                <input type="text" name="name" id="categoryName" required 
+                       class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                       placeholder="Enter category name">
+            </div>
+            
+            <!-- Parent Category -->
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Parent Category</label>
+                <select name="parent_id" id="parentCategory" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <option value="">-- No Parent (Top Level) --</option>
+                    {% for cat in all_categories %}
+                    <option value="{{ cat.id }}" data-level="{{ cat.level }}">
+                        {% for i in "x"|ljust:cat.level %}&nbsp;&nbsp;&nbsp;{% endfor %}
+                        {% if cat.level == 0 %}📁{% elif cat.level == 1 %}📂{% else %}📄{% endif %}
+                        {{ cat.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Select a parent category to create a subcategory</p>
+            </div>
+            
+            <!-- Category Icon -->
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Icon Class</label>
+                <div class="flex gap-2 flex-wrap">
+                    <button type="button" data-icon="folder-open" class="icon-option p-2 border rounded-lg hover:bg-green-50"><i class="fas fa-folder-open text-green-600"></i></button>
+                    <button type="button" data-icon="folder" class="icon-option p-2 border rounded-lg hover:bg-green-50"><i class="fas fa-folder text-blue-500"></i></button>
+                    <button type="button" data-icon="tag" class="icon-option p-2 border rounded-lg hover:bg-green-50"><i class="fas fa-tag text-purple-500"></i></button>
+                    <button type="button" data-icon="book" class="icon-option p-2 border rounded-lg hover:bg-green-50"><i class="fas fa-book text-green-600"></i></button>
+                    <button type="button" data-icon="graduation-cap" class="icon-option p-2 border rounded-lg hover:bg-green-50"><i class="fas fa-graduation-cap text-blue-600"></i></button>
+                    <button type="button" data-icon="chalkboard-teacher" class="icon-option p-2 border rounded-lg hover:bg-green-50"><i class="fas fa-chalkboard-teacher text-orange-600"></i></button>
+                </div>
+                <input type="hidden" name="icon" id="categoryIcon" value="folder-open">
+            </div>
+            
+            <!-- Category Image Upload -->
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Category Image</label>
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-green-500 transition cursor-pointer" id="imageUploadArea">
+                    <input type="file" name="cover_image" id="coverImage" accept="image/*" class="hidden">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-500 text-sm">Click or drag to upload category image</p>
+                    <p class="text-xs text-gray-400 mt-1">Recommended size: 400x300px (JPG, PNG)</p>
+                </div>
+                <div id="imagePreviewContainer" class="mt-3 hidden">
+                    <img id="imagePreview" class="image-preview" src="">
+                    <button type="button" onclick="removeImage()" class="text-red-500 text-sm mt-1"><i class="fas fa-trash mr-1"></i> Remove Image</button>
+                </div>
+            </div>
+            
+            <!-- Description -->
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Description</label>
+                <textarea name="description" id="categoryDescription" rows="3" 
+                          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                          placeholder="Describe this category..."></textarea>
+            </div>
+            
+            <!-- Order -->
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Display Order</label>
+                <input type="number" name="order" id="categoryOrder" value="0" 
+                       class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                <p class="text-xs text-gray-500 mt-1">Lower numbers appear first</p>
+            </div>
+            
+            <!-- Status -->
+            <div class="mb-6">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" name="is_active" id="categoryActive" class="mr-2" checked>
+                    <span class="text-gray-700">Active</span>
+                </label>
+            </div>
+            
+            <div class="flex gap-3">
+                <button type="submit" class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">
+                    <i class="fas fa-save mr-2"></i> Save Category
+                </button>
+                <button type="button" onclick="closeModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <div class="text-center">
+            <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Delete Category</h3>
+            <p class="text-gray-600 mb-4">Are you sure you want to delete "<span id="deleteCategoryName"></span>"?</p>
+            <p class="text-sm text-red-600 mb-4">This will also delete all subcategories and move books to uncategorized.</p>
+            <form id="deleteForm" method="post" action="">
+                {% csrf_token %}
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition">
+                        Yes, Delete
+                    </button>
+                    <button type="button" onclick="closeDeleteModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentCategoryId = null;
+    
+    // Open Add Modal
+    function openAddModal() {
+        document.getElementById('modalTitle').textContent = 'Add Category';
+        document.getElementById('categoryForm').reset();
+        document.getElementById('categoryId').value = '';
+        document.getElementById('categoryIcon').value = 'folder-open';
+        document.getElementById('categoryActive').checked = true;
+        document.getElementById('imagePreviewContainer').classList.add('hidden');
+        document.getElementById('categoryModal').classList.remove('hidden');
+        document.getElementById('categoryModal').classList.add('flex', 'show');
+    }
+    
+    // Edit Category
+    function editCategory(id) {
+        fetch(`/books/api/category/${id}/`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('modalTitle').textContent = 'Edit Category';
+                document.getElementById('categoryId').value = data.id;
+                document.getElementById('categoryName').value = data.name;
+                document.getElementById('parentCategory').value = data.parent_id || '';
+                document.getElementById('categoryIcon').value = data.icon || 'folder-open';
+                document.getElementById('categoryDescription').value = data.description || '';
+                document.getElementById('categoryOrder').value = data.order;
+                document.getElementById('categoryActive').checked = data.is_active;
+                
+                // Set icon highlight
+                document.querySelectorAll('.icon-option').forEach(btn => {
+                    btn.classList.remove('border-green-500', 'bg-green-50');
+                    if (btn.dataset.icon === data.icon) {
+                        btn.classList.add('border-green-500', 'bg-green-50');
+                    }
+                });
+                
+                // Show image preview if exists
+                if (data.cover_image) {
+                    document.getElementById('imagePreview').src = data.cover_image;
+                    document.getElementById('imagePreviewContainer').classList.remove('hidden');
+                } else {
+                    document.getElementById('imagePreviewContainer').classList.add('hidden');
+                }
+                
+                document.getElementById('categoryModal').classList.remove('hidden');
+                document.getElementById('categoryModal').classList.add('flex', 'show');
+            });
+    }
+    
+    // Delete Category
+    function deleteCategory(id, name) {
+        document.getElementById('deleteCategoryName').textContent = name;
+        document.getElementById('deleteForm').action = `/books/admin-panel/categories/delete/${id}/`;
+        document.getElementById('deleteModal').classList.remove('hidden');
+        document.getElementById('deleteModal').classList.add('flex', 'show');
+    }
+    
+    function closeModal() {
+        document.getElementById('categoryModal').classList.add('hidden');
+        document.getElementById('categoryModal').classList.remove('flex', 'show');
+    }
+    
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+        document.getElementById('deleteModal').classList.remove('flex', 'show');
+    }
+    
+    // Icon selection
+    document.querySelectorAll('.icon-option').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.icon-option').forEach(b => {
+                b.classList.remove('border-green-500', 'bg-green-50');
+            });
+            this.classList.add('border-green-500', 'bg-green-50');
+            document.getElementById('categoryIcon').value = this.dataset.icon;
+        });
+    });
+    
+    // Image upload handling
+    const imageUploadArea = document.getElementById('imageUploadArea');
+    const coverImageInput = document.getElementById('coverImage');
+    
+    imageUploadArea.addEventListener('click', () => coverImageInput.click());
+    
+    imageUploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        imageUploadArea.classList.add('border-green-500', 'bg-green-50');
+    });
+    
+    imageUploadArea.addEventListener('dragleave', () => {
+        imageUploadArea.classList.remove('border-green-500', 'bg-green-50');
+    });
+    
+    imageUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        imageUploadArea.classList.remove('border-green-500', 'bg-green-50');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            handleImageFile(file);
+        }
+    });
+    
+    coverImageInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) {
+            handleImageFile(e.target.files[0]);
+        }
+    });
+    
+    function handleImageFile(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('imagePreview').src = e.target.result;
+            document.getElementById('imagePreviewContainer').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    function removeImage() {
+        document.getElementById('coverImage').value = '';
+        document.getElementById('imagePreviewContainer').classList.add('hidden');
+    }
+    
+    // Close modals on escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+            closeDeleteModal();
+        }
+    });
+    
+    // Close modal on outside click
+    document.getElementById('categoryModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+    
+    document.getElementById('deleteModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDeleteModal();
+    });
+</script>
+{% endblock %}

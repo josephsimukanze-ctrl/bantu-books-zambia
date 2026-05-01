@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Grade Levels - Admin{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-5xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Manage Grade Levels</h1>
+                <p class="text-gray-600">Add, edit, or remove grade levels for book classification</p>
+            </div>
+            <button onclick="openAddGradeModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+                <i class="fas fa-plus mr-2"></i> Add Grade Level
+            </button>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Slug</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Books</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        {% for grade in grades %}
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-6 py-4 font-medium">{{ grade.name }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">{{ grade.slug }}</td>
+                            <td class="px-6 py-4">{{ grade.order }}</td>
+                            <td class="px-6 py-4">
+                                {% if grade.is_active %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <i class="fas fa-check-circle mr-1 text-xs"></i> Active
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    <i class="fas fa-times-circle mr-1 text-xs"></i> Inactive
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">{{ grade.books.count }}</td>
+                            <td class="px-6 py-4">
+                                <button onclick="editGrade({{ grade.id }}, '{{ grade.name }}', {{ grade.order }})" class="text-blue-600 hover:text-blue-800 mr-3">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteGrade({{ grade.id }}, '{{ grade.name }}')" class="text-red-600 hover:text-red-800">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                <i class="fas fa-folder-open text-4xl mb-2 block"></i>
+                                No grade levels found. Click "Add Grade Level" to create one.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Grade Modal -->
+<div id="gradeModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+        <div class="px-6 py-4 border-b flex justify-between items-center">
+            <h3 id="gradeModalTitle" class="text-xl font-bold text-gray-800">Add Grade Level</h3>
+            <button onclick="closeGradeModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <form id="gradeForm" method="post" action="{% url 'books:add_grade' %}" class="p-6">
+            {% csrf_token %}
+            <input type="hidden" name="grade_id" id="gradeId">
+            <div class="mb-4">
+                <label class="block text-gray-700 font-medium mb-2">Grade Name</label>
+                <input type="text" name="name" id="gradeName" required 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                       placeholder="e.g., Grade 7, Grade 12">
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 font-medium mb-2">Display Order</label>
+                <input type="number" name="order" id="gradeOrder" value="0"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                       placeholder="0 = highest priority">
+            </div>
+            <div class="flex gap-3">
+                <button type="submit" class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">
+                    <i class="fas fa-save mr-2"></i> Save Grade
+                </button>
+                <button type="button" onclick="closeGradeModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+        <div class="px-6 py-4 border-b">
+            <h3 class="text-xl font-bold text-red-600">Confirm Delete</h3>
+        </div>
+        <div class="p-6">
+            <p class="text-gray-700 mb-4">Are you sure you want to delete <strong id="deleteGradeName"></strong>?</p>
+            <p class="text-sm text-red-600 mb-4">This action cannot be undone. Books assigned to this grade will not be deleted.</p>
+            <form id="deleteForm" method="post" action="">
+                {% csrf_token %}
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition">
+                        <i class="fas fa-trash mr-2"></i> Delete
+                    </button>
+                    <button type="button" onclick="closeDeleteModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentGradeId = null;
+    
+    function openAddGradeModal() {
+        document.getElementById('gradeModalTitle').textContent = 'Add Grade Level';
+        document.getElementById('gradeForm').action = "{% url 'books:add_grade' %}";
+        document.getElementById('gradeName').value = '';
+        document.getElementById('gradeOrder').value = '0';
+        document.getElementById('gradeId').value = '';
+        document.getElementById('gradeModal').classList.remove('hidden');
+        document.getElementById('gradeModal').classList.add('flex');
+    }
+    
+    function editGrade(id, name, order) {
+        document.getElementById('gradeModalTitle').textContent = 'Edit Grade Level';
+        document.getElementById('gradeForm').action = `/books/admin-panel/grades/update/${id}/`;
+        document.getElementById('gradeName').value = name;
+        document.getElementById('gradeOrder').value = order;
+        document.getElementById('gradeId').value = id;
+        document.getElementById('gradeModal').classList.remove('hidden');
+        document.getElementById('gradeModal').classList.add('flex');
+    }
+    
+    function closeGradeModal() {
+        document.getElementById('gradeModal').classList.add('hidden');
+        document.getElementById('gradeModal').classList.remove('flex');
+    }
+    
+    function deleteGrade(id, name) {
+        document.getElementById('deleteGradeName').textContent = name;
+        document.getElementById('deleteForm').action = `/books/admin-panel/grades/delete/${id}/`;
+        document.getElementById('deleteModal').classList.remove('hidden');
+        document.getElementById('deleteModal').classList.add('flex');
+    }
+    
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+        document.getElementById('deleteModal').classList.remove('flex');
+    }
+    
+    // Close modals when clicking outside
+    document.getElementById('gradeModal').addEventListener('click', function(e) {
+        if (e.target === this) closeGradeModal();
+    });
+    
+    document.getElementById('deleteModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDeleteModal();
+    });
+    
+    // Handle form submission for edit
+    document.getElementById('gradeForm').addEventListener('submit', function(e) {
+        const gradeId = document.getElementById('gradeId').value;
+        if (gradeId) {
+            this.action = `/books/admin-panel/grades/update/${gradeId}/`;
+        }
+    });
+</script>
+{% endblock %}

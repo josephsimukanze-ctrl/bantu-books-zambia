@@ -1,0 +1,457 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Reading History - Bantu Books Zambia{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Stats Cards */
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border-color: #059669;
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Progress bar animation */
+    .progress-bar {
+        transition: width 0.6s ease;
+    }
+    
+    /* Reading history card */
+    .history-card {
+        background: white;
+        border-radius: 1rem;
+        transition: all 0.3s ease;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .history-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border-color: #059669;
+    }
+    
+    /* Reading streak badge */
+    .streak-badge {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    /* Continue reading button */
+    .continue-btn {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        transition: all 0.3s ease;
+    }
+    
+    .continue-btn:hover {
+        transform: translateX(4px);
+        box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.3);
+    }
+    
+    /* Achievement badge */
+    .achievement-badge {
+        background: #f0fdf4;
+        border: 1px solid #059669;
+        color: #059669;
+        padding: 0.5rem 1rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    /* Time ago text */
+    .time-ago {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+    
+    /* Empty state animation */
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    .empty-state-icon {
+        animation: float 3s ease-in-out infinite;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">📚 Reading History</h1>
+            <p class="text-gray-600">Track your reading progress and achievements</p>
+        </div>
+        
+        {% if reads %}
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Total Books Card -->
+            <div class="stat-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm mb-1">Total Books Read</p>
+                        <p class="text-3xl font-bold text-gray-800">{{ total_books|default:reads.paginator.count }}</p>
+                        <p class="text-xs text-green-600 mt-1">
+                            <i class="fas fa-book-open mr-1"></i>Active reading
+                        </p>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-book text-2xl text-green-600"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Total Pages Read -->
+            <div class="stat-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm mb-1">Total Pages Read</p>
+                        <p class="text-3xl font-bold text-gray-800">{{ total_pages_read|default:0|intcomma }}</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-chart-line mr-1"></i>Across all books
+                        </p>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-file-alt text-2xl text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reading Streak -->
+            <div class="stat-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm mb-1">Current Streak</p>
+                        <p class="text-3xl font-bold text-gray-800">{{ reading_streak|default:0 }}</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-fire mr-1 text-orange-500"></i>days in a row
+                        </p>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-fire text-2xl text-orange-500"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Total Time Spent -->
+            <div class="stat-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm mb-1">Total Time Spent</p>
+                        <p class="text-3xl font-bold text-gray-800">{{ total_time_spent|default:"0" }}</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-clock mr-1"></i>reading time
+                        </p>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-hourglass-half text-2xl text-purple-600"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Achievements Section -->
+        {% if achievements %}
+        <div class="mb-8">
+            <h2 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <i class="fas fa-trophy text-yellow-500"></i>
+                Achievements Unlocked
+                <span class="text-xs text-gray-500">({{ achievements|length }})</span>
+            </h2>
+            <div class="flex flex-wrap gap-2">
+                {% for achievement in achievements %}
+                <div class="achievement-badge">
+                    <i class="{{ achievement.icon }}"></i>
+                    {{ achievement.name }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Reading History List -->
+        <div class="space-y-4">
+            <h2 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <i class="fas fa-history text-green-600"></i>
+                Your Reading Journey
+            </h2>
+            
+            {% for read in reads %}
+            <div class="history-card p-6">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <!-- Book Info -->
+                    <div class="flex-1">
+                        <div class="flex items-start gap-4">
+                            <!-- Book Cover -->
+                            <div class="w-16 h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
+                                {% if read.book.cover_image %}
+                                    <img src="{{ read.book.cover_image.url }}" alt="{{ read.book.title }}" 
+                                         class="w-full h-full object-cover">
+                                {% else %}
+                                    <div class="w-full h-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+                                        <i class="fas fa-book text-2xl text-green-600"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Book Details -->
+                            <div class="flex-1">
+                                <h3 class="font-bold text-lg text-gray-800 mb-1">
+                                    <a href="{% url 'books:book_detail' read.book.slug %}" class="hover:text-green-600 transition">
+                                        {{ read.book.title }}
+                                    </a>
+                                </h3>
+                                <p class="text-gray-600 text-sm mb-2">
+                                    <i class="fas fa-user mr-1"></i>{{ read.book.author }}
+                                </p>
+                                
+                                <!-- Progress Bar -->
+                                <div class="mb-2">
+                                    <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                        <span>Reading Progress</span>
+                                        <span class="font-semibold text-green-600">{{ read.completion_percentage }}% Complete</span>
+                                    </div>
+                                    <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                                        <div class="progress-bar h-full bg-green-600 rounded-full" 
+                                             style="width: {{ read.completion_percentage }}%"></div>
+                                    </div>
+                                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                        <span>{{ read.pages_read }} of {{ read.book.pages|default:0 }} pages read</span>
+                                        <span>
+                                            {% if read.remaining_pages > 0 %}
+                                                {{ read.remaining_pages }} pages left
+                                            {% else %}
+                                                ✅ Completed!
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Reading Stats -->
+                                <div class="flex flex-wrap gap-4 text-xs text-gray-500">
+                                    <span>
+                                        <i class="fas fa-clock mr-1"></i>
+                                        Time spent: 
+                                        {% if read.time_spent >= 3600 %}
+                                            {{ read.time_spent_hours }}h {{ read.time_spent_minutes }}m
+                                        {% elif read.time_spent >= 60 %}
+                                            {{ read.time_spent_minutes }} minutes
+                                        {% else %}
+                                            {{ read.time_spent }} seconds
+                                        {% endif %}
+                                    </span>
+                                    <span>
+                                        <i class="fas fa-calendar-alt mr-1"></i>
+                                        Last read: {{ read.last_activity|date:"M d, Y" }}
+                                    </span>
+                                    <span class="time-ago">
+                                        <i class="fas fa-hourglass-start mr-1"></i>
+                                        {{ read.last_activity|timesince }} ago
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        {% if read.completion_percentage < 100 %}
+                        <a href="{% url 'downloads:read_online' read.book.slug %}" 
+                           class="continue-btn text-white px-6 py-2 rounded-lg flex items-center justify-center gap-2 transition">
+                            <i class="fas fa-book-open"></i>
+                            Continue Reading
+                        </a>
+                        {% else %}
+                        <div class="bg-green-100 text-green-700 px-6 py-2 rounded-lg flex items-center justify-center gap-2">
+                            <i class="fas fa-check-circle"></i>
+                            Completed!
+                        </div>
+                        {% endif %}
+                        
+                        <a href="{% url 'downloads:download_book' read.book.slug %}" 
+                           class="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-200 transition flex items-center justify-center gap-2">
+                            <i class="fas fa-download"></i>
+                            Download
+                        </a>
+                        
+                        <button onclick="removeFromHistory('{{ read.id }}')" 
+                                class="text-red-500 hover:text-red-700 px-3 py-2 rounded-lg transition">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if reads.has_other_pages %}
+        <div class="flex justify-center mt-8">
+            <nav class="flex gap-2">
+                {% if reads.has_previous %}
+                <a href="?page={{ reads.previous_page_number }}" 
+                   class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                    ← Previous
+                </a>
+                {% endif %}
+                
+                <span class="px-4 py-2 bg-green-600 text-white rounded-lg">
+                    Page {{ reads.number }} of {{ reads.paginator.num_pages }}
+                </span>
+                
+                {% if reads.has_next %}
+                <a href="?page={{ reads.next_page_number }}" 
+                   class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                    Next →
+                </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+        
+        <!-- Recommendation Section -->
+        <div class="mt-8 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-1">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+                        Keep Your Reading Streak Going!
+                    </h3>
+                    <p class="text-sm text-gray-600">
+                        You're on a {{ reading_streak|default:0 }}-day streak. Read today to maintain it!
+                    </p>
+                </div>
+                <a href="{% url 'books:book_list' %}" 
+                   class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2">
+                    <i class="fas fa-search"></i>
+                    Find More Books
+                </a>
+            </div>
+        </div>
+        
+        {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-16 bg-white rounded-xl shadow-sm">
+            <div class="empty-state-icon">
+                <i class="fas fa-book-reader text-8xl text-gray-300 mb-4"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-700 mb-2">Start Your Reading Journey</h2>
+            <p class="text-gray-500 mb-6 max-w-md mx-auto">
+                You haven't read any books online yet. Pick a book and start reading to track your progress!
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="{% url 'books:book_list' %}" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition inline-flex items-center justify-center gap-2">
+                    <i class="fas fa-book-open"></i>
+                    Browse Books
+                </a>
+                <a href="{% url 'books:featured_books' %}" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition inline-flex items-center justify-center gap-2">
+                    <i class="fas fa-star"></i>
+                    View Featured
+                </a>
+            </div>
+            
+            <!-- Suggestions -->
+            <div class="mt-8">
+                <p class="text-gray-500 text-sm mb-3">Popular categories to explore:</p>
+                <div class="flex flex-wrap gap-2 justify-center">
+                    <a href="{% url 'books:book_list' %}?category=ecz-exam-papers" class="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-green-100 transition">
+                        📚 ECZ Papers
+                    </a>
+                    <a href="{% url 'books:book_list' %}?category=zambian-novels" class="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-green-100 transition">
+                        📖 Zambian Novels
+                    </a>
+                    <a href="{% url 'books:book_list' %}?category=university-materials" class="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-green-100 transition">
+                        🎓 University Materials
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Remove from history with confirmation
+function removeFromHistory(readingId) {
+    if (confirm('Are you sure you want to remove this book from your reading history?')) {
+        fetch(`/reading-history/${readingId}/remove/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error removing from history');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error removing from history');
+        });
+    }
+}
+
+// Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Animate progress bars on load
+document.addEventListener('DOMContentLoaded', function() {
+    const progressBars = document.querySelectorAll('.progress-bar');
+    progressBars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => {
+            bar.style.width = width;
+        }, 100);
+    });
+});
+</script>
+{% endblock %}

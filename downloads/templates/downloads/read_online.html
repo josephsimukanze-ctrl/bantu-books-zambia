@@ -1,0 +1,432 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reading: {{ book.title }} - Bantu Books Zambia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pdf-container {
+        position: relative;
+        width: 100%;
+        height: calc(100vh - 200px);
+        min-height: 600px;
+        background: #f5f5f5;
+    }
+    
+    .pdf-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: white;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 0.75rem 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .progress-bar-container {
+        flex: 1;
+        height: 6px;
+        background: #e5e7eb;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .progress-bar-fill {
+        height: 100%;
+        background: #059669;
+        border-radius: 3px;
+        transition: width 0.3s ease;
+        width: 0%;
+    }
+    
+    .btn-icon {
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    
+    .btn-icon:hover {
+        background-color: #f3f4f6;
+    }
+    
+    .page-input {
+        width: 70px;
+        text-align: center;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .zoom-level {
+        min-width: 70px;
+        text-align: center;
+    }
+    
+    .reading-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    /* Fullscreen mode */
+    .pdf-container:fullscreen {
+        height: 100vh;
+    }
+    
+    .pdf-container:fullscreen .pdf-toolbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+    }
+    
+    /* Loading spinner */
+    .loading-spinner {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+    
+    .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #059669;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-4">
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-gray-800 to-gray-900 text-white p-4">
+            <div class="flex flex-wrap justify-between items-center gap-3">
+                <div>
+                    <h1 class="text-xl font-bold">{{ book.title }}</h1>
+                    <p class="text-sm text-gray-300">By {{ book.author }}</p>
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                    <a href="{% url 'downloads:download_book' book.slug %}" 
+                       class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition text-sm flex items-center gap-2">
+                        <i class="fas fa-download"></i> Download PDF
+                    </a>
+                    <a href="{% url 'books:book_detail' book.slug %}" 
+                       class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg transition text-sm flex items-center gap-2">
+                        <i class="fas fa-arrow-left"></i> Back to Book
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- PDF Toolbar -->
+        <div class="pdf-toolbar">
+            <div class="flex items-center gap-2">
+                <button onclick="zoomOut()" class="btn-icon" title="Zoom Out">
+                    <i class="fas fa-search-minus"></i>
+                </button>
+                <span id="zoomLevel" class="zoom-level text-sm">100%</span>
+                <button onclick="zoomIn()" class="btn-icon" title="Zoom In">
+                    <i class="fas fa-search-plus"></i>
+                </button>
+                <div class="w-px h-6 bg-gray-300 mx-1"></div>
+                <button onclick="prevPage()" class="btn-icon" title="Previous Page">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <span class="text-sm">
+                    Page <input type="number" id="pageInput" class="page-input" value="1" min="1"> 
+                    of <span id="totalPages">--</span>
+                </span>
+                <button onclick="nextPage()" class="btn-icon" title="Next Page">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <div class="w-px h-6 bg-gray-300 mx-1"></div>
+                <button onclick="toggleFullscreen()" class="btn-icon" title="Fullscreen">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+            
+            <!-- Reading Progress -->
+            <div class="flex items-center gap-3 flex-1">
+                <div class="progress-bar-container">
+                    <div id="progressFill" class="progress-bar-fill"></div>
+                </div>
+                <span id="progressText" class="text-sm text-gray-600 whitespace-nowrap">0% read</span>
+            </div>
+        </div>
+        
+        <!-- PDF Viewer Container -->
+        <div id="pdfContainer" class="pdf-container">
+            <div id="loadingIndicator" class="loading-spinner">
+                <div class="spinner"></div>
+                <p class="text-gray-600">Loading PDF...</p>
+            </div>
+            <canvas id="pdfCanvas" style="display: none; width: 100%; height: auto;"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- PDF.js Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script>
+    // Set up PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    
+    // Variables
+    let pdfDoc = null;
+    let currentPage = 1;
+    let currentZoom = 1.0;
+    let totalPages = 0;
+    let startTime = Date.now();
+    let readingSessionId = null;
+    let pagesReadSet = new Set();
+    
+    // DOM elements
+    const canvas = document.getElementById('pdfCanvas');
+    const ctx = canvas.getContext('2d');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const pageInput = document.getElementById('pageInput');
+    const totalPagesSpan = document.getElementById('totalPages');
+    const zoomLevelSpan = document.getElementById('zoomLevel');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    
+    // Load PDF
+    async function loadPDF() {
+        try {
+            loadingIndicator.style.display = 'block';
+            canvas.style.display = 'none';
+            
+            const url = "{{ book.pdf_file.url }}";
+            pdfDoc = await pdfjsLib.getDocument(url).promise;
+            totalPages = pdfDoc.numPages;
+            totalPagesSpan.textContent = totalPages;
+            pageInput.max = totalPages;
+            
+            // Load saved progress from localStorage
+            const savedProgress = localStorage.getItem(`reading_progress_{{ book.id }}`);
+            if (savedProgress) {
+                const progress = JSON.parse(savedProgress);
+                currentPage = progress.page || 1;
+                pagesReadSet = new Set(progress.pagesRead || []);
+                updateProgressDisplay();
+            }
+            
+            await renderPage(currentPage);
+            loadingIndicator.style.display = 'none';
+            canvas.style.display = 'block';
+            
+            // Track reading session start
+            startReadingSession();
+            
+        } catch (error) {
+            console.error('Error loading PDF:', error);
+            loadingIndicator.innerHTML = '<div class="text-red-500"><i class="fas fa-exclamation-circle text-4xl mb-2"></i><p>Failed to load PDF. Please try downloading instead.</p></div>';
+        }
+    }
+    
+    // Render page
+    async function renderPage(pageNum) {
+        if (!pdfDoc) return;
+        
+        const page = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: currentZoom });
+        
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        canvas.style.width = '100%';
+        canvas.style.height = 'auto';
+        
+        const renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+        };
+        
+        await page.render(renderContext).promise;
+        
+        // Track page as read
+        if (!pagesReadSet.has(pageNum)) {
+            pagesReadSet.add(pageNum);
+            updateProgressDisplay();
+            saveProgress();
+        }
+        
+        pageInput.value = pageNum;
+        currentPage = pageNum;
+    }
+    
+    // Update progress display
+    function updateProgressDisplay() {
+        const percentage = Math.round((pagesReadSet.size / totalPages) * 100);
+        progressFill.style.width = `${percentage}%`;
+        progressText.textContent = `${percentage}% read`;
+        
+        // Save to localStorage
+        localStorage.setItem(`reading_progress_{{ book.id }}`, JSON.stringify({
+            page: currentPage,
+            pagesRead: Array.from(pagesReadSet),
+            percentage: percentage,
+            lastRead: new Date().toISOString()
+        }));
+    }
+    
+    // Save progress to server
+    async function saveProgress() {
+        const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+        const percentage = Math.round((pagesReadSet.size / totalPages) * 100);
+        const completed = percentage === 100;
+        
+        try {
+            await fetch('{% url "downloads:update_progress" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                },
+                body: JSON.stringify({
+                    book_id: {{ book.id }},
+                    pages_read: pagesReadSet.size,
+                    time_spent: timeSpent,
+                    completed: completed
+                })
+            });
+        } catch (error) {
+            console.error('Error saving progress:', error);
+        }
+    }
+    
+    // Start reading session
+    async function startReadingSession() {
+        try {
+            const response = await fetch('{% url "downloads:update_progress" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                },
+                body: JSON.stringify({
+                    book_id: {{ book.id }},
+                    pages_read: pagesReadSet.size,
+                    time_spent: 0,
+                    completed: false
+                })
+            });
+            const data = await response.json();
+            readingSessionId = data.session_id;
+        } catch (error) {
+            console.error('Error starting session:', error);
+        }
+    }
+    
+    // Navigation functions
+    async function nextPage() {
+        if (currentPage < totalPages) {
+            currentPage++;
+            await renderPage(currentPage);
+            saveProgress();
+        }
+    }
+    
+    async function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            await renderPage(currentPage);
+            saveProgress();
+        }
+    }
+    
+    async function goToPage() {
+        let page = parseInt(pageInput.value);
+        if (isNaN(page)) page = 1;
+        page = Math.min(Math.max(page, 1), totalPages);
+        if (page !== currentPage) {
+            currentPage = page;
+            await renderPage(currentPage);
+            saveProgress();
+        }
+    }
+    
+    // Zoom functions
+    async function zoomIn() {
+        currentZoom = Math.min(currentZoom + 0.25, 3.0);
+        zoomLevelSpan.textContent = `${Math.round(currentZoom * 100)}%`;
+        await renderPage(currentPage);
+    }
+    
+    async function zoomOut() {
+        currentZoom = Math.max(currentZoom - 0.25, 0.5);
+        zoomLevelSpan.textContent = `${Math.round(currentZoom * 100)}%`;
+        await renderPage(currentPage);
+    }
+    
+    // Fullscreen
+    function toggleFullscreen() {
+        const container = document.getElementById('pdfContainer');
+        if (!document.fullscreenElement) {
+            container.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable fullscreen: ${err.message}`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+    
+    // Event listeners
+    pageInput.addEventListener('change', goToPage);
+    
+    // Save progress on page unload
+    window.addEventListener('beforeunload', async () => {
+        const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+        const percentage = Math.round((pagesReadSet.size / totalPages) * 100);
+        
+        await fetch('{% url "downloads:update_progress" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+            },
+            body: JSON.stringify({
+                book_id: {{ book.id }},
+                pages_read: pagesReadSet.size,
+                time_spent: timeSpent,
+                completed: percentage === 100
+            }),
+            keepalive: true
+        });
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') {
+            nextPage();
+        } else if (e.key === 'ArrowLeft') {
+            prevPage();
+        } else if (e.key === '+' || e.key === '=') {
+            zoomIn();
+        } else if (e.key === '-') {
+            zoomOut();
+        } else if (e.key === 'f') {
+            toggleFullscreen();
+        }
+    });
+    
+    // Load PDF on page load
+    loadPDF();
+</script>
+{% endblock %}

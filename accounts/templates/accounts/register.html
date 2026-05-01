@@ -1,0 +1,402 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Register - Bantu Books Zambia{% endblock %}
+
+{% block extra_css %}
+<style>
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .register-container {
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    .input-group {
+        transition: all 0.3s ease;
+        margin-bottom: 1rem;
+    }
+    
+    .input-group:focus-within {
+        transform: translateY(-2px);
+    }
+    
+    .password-requirements {
+        background: #f8fafc;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        margin-top: 0.5rem;
+    }
+    
+    .requirement {
+        font-size: 0.75rem;
+        margin: 0.25rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .requirement i {
+        width: 1rem;
+    }
+    
+    .requirement.valid {
+        color: #059669;
+    }
+    
+    .requirement.invalid {
+        color: #9ca3af;
+    }
+    
+    .password-strength {
+        height: 4px;
+        background: #e5e7eb;
+        border-radius: 2px;
+        margin-top: 0.5rem;
+        overflow: hidden;
+    }
+    
+    .password-strength-bar {
+        height: 100%;
+        width: 0%;
+        transition: width 0.3s ease, background-color 0.3s ease;
+    }
+    
+    .strength-weak { background-color: #ef4444; width: 25%; }
+    .strength-fair { background-color: #f59e0b; width: 50%; }
+    .strength-good { background-color: #3b82f6; width: 75%; }
+    .strength-strong { background-color: #10b981; width: 100%; }
+    
+    .form-input {
+        width: 100%;
+        padding: 0.625rem 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-input:focus {
+        outline: none;
+        border-color: #059669;
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+    }
+    
+    .form-select {
+        width: 100%;
+        padding: 0.625rem 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        background-color: white;
+        cursor: pointer;
+    }
+    
+    .form-select:focus {
+        outline: none;
+        border-color: #059669;
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12">
+    <div class="container mx-auto px-4">
+        <div class="max-w-3xl mx-auto register-container">
+            <!-- Logo -->
+            <div class="text-center mb-8">
+                <div class="inline-block bg-gradient-to-r from-green-600 to-emerald-600 p-4 rounded-2xl shadow-lg mb-4">
+                    <i class="fas fa-user-plus text-4xl text-white"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800">Bantu Books Zambia</h1>
+                <p class="text-gray-500 mt-1">Join thousands of Zambian readers</p>
+            </div>
+            
+            <!-- Registration Card -->
+            <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+                <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-6">
+                    <h2 class="text-2xl font-bold text-white">Create Your Account 📝</h2>
+                    <p class="text-green-100 mt-1">Join Bantu Books Zambia today!</p>
+                </div>
+                
+                <form method="post" class="p-8" id="registerForm">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+                                <span class="text-red-700">{{ form.non_field_errors }}</span>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <!-- Username -->
+                        <div class="input-group">
+                            <label class="block text-gray-700 font-semibold mb-2 text-sm">
+                                <i class="fas fa-user text-green-600 mr-2"></i>Username *
+                            </label>
+                            {{ form.username }}
+                            <p class="text-xs text-gray-500 mt-1">At least 3 characters</p>
+                            {% if form.username.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.username.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="input-group">
+                            <label class="block text-gray-700 font-semibold mb-2 text-sm">
+                                <i class="fas fa-envelope text-green-600 mr-2"></i>Email Address *
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.email.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- First Name -->
+                        <div class="input-group">
+                            <label class="block text-gray-700 font-semibold mb-2 text-sm">
+                                <i class="fas fa-user-circle text-green-600 mr-2"></i>First Name *
+                            </label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.first_name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Last Name -->
+                        <div class="input-group">
+                            <label class="block text-gray-700 font-semibold mb-2 text-sm">
+                                <i class="fas fa-user-circle text-green-600 mr-2"></i>Last Name *
+                            </label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.last_name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Phone Number -->
+                        <div class="input-group">
+                            <label class="block text-gray-700 font-semibold mb-2 text-sm">
+                                <i class="fas fa-phone text-green-600 mr-2"></i>Phone Number *
+                            </label>
+                            {{ form.phone_number }}
+                            <p class="text-xs text-gray-500 mt-1">Format: +260977123456 or 0977123456</p>
+                            {% if form.phone_number.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.phone_number.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Province -->
+                        <div class="input-group">
+                            <label class="block text-gray-700 font-semibold mb-2 text-sm">
+                                <i class="fas fa-map-marker-alt text-green-600 mr-2"></i>Province
+                            </label>
+                            {{ form.province }}
+                            {% if form.province.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.province.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Password -->
+                        <div class="input-group">
+                            <label class="block text-gray-700 font-semibold mb-2 text-sm">
+                                <i class="fas fa-lock text-green-600 mr-2"></i>Password *
+                            </label>
+                            <div class="relative">
+                                {{ form.password1 }}
+                                <button type="button" onclick="togglePassword('password1')" class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700">
+                                    <i id="password1Toggle" class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            {% if form.password1.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.password1.errors.0 }}</p>
+                            {% endif %}
+                            
+                            <!-- Password Requirements -->
+                            <div class="password-requirements mt-2">
+                                <p class="text-xs font-semibold text-gray-700 mb-2">Password requirements:</p>
+                                <div class="requirement" id="req-length">
+                                    <i class="far fa-circle"></i>
+                                    <span>At least 8 characters</span>
+                                </div>
+                                <div class="requirement" id="req-number">
+                                    <i class="far fa-circle"></i>
+                                    <span>At least one number</span>
+                                </div>
+                                <div class="requirement" id="req-uppercase">
+                                    <i class="far fa-circle"></i>
+                                    <span>At least one uppercase letter</span>
+                                </div>
+                                <div class="requirement" id="req-special">
+                                    <i class="far fa-circle"></i>
+                                    <span>At least one special character (!@#$%^&*)</span>
+                                </div>
+                                <div class="password-strength mt-2">
+                                    <div id="passwordStrengthBar" class="password-strength-bar"></div>
+                                </div>
+                                <p id="strengthText" class="text-xs text-gray-500 mt-1">Enter a password</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Confirm Password -->
+                        <div class="input-group">
+                            <label class="block text-gray-700 font-semibold mb-2 text-sm">
+                                <i class="fas fa-check-circle text-green-600 mr-2"></i>Confirm Password *
+                            </label>
+                            <div class="relative">
+                                {{ form.password2 }}
+                                <button type="button" onclick="togglePassword('password2')" class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700">
+                                    <i id="password2Toggle" class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div id="passwordMatchMsg" class="text-xs mt-1"></div>
+                            {% if form.password2.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.password2.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8">
+                        <button type="submit" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 rounded-xl hover:from-green-700 hover:to-emerald-700 transition duration-300 shadow-lg">
+                            <i class="fas fa-user-plus mr-2"></i> Create Account
+                        </button>
+                    </div>
+                    
+                    <p class="text-center text-gray-600 mt-6">
+                        Already have an account? 
+                        <a href="{% url 'accounts:login' %}" class="text-green-600 font-semibold hover:underline">
+                            Sign In <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function togglePassword(fieldId) {
+        const passwordInput = document.getElementById(`id_${fieldId}`);
+        const toggleIcon = document.getElementById(`${fieldId}Toggle`);
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
+    }
+    
+    // Password strength checker
+    const passwordInput = document.getElementById('id_password1');
+    const confirmInput = document.getElementById('id_password2');
+    const strengthBar = document.getElementById('passwordStrengthBar');
+    const strengthText = document.getElementById('strengthText');
+    
+    function checkPasswordStrength(password) {
+        let strength = 0;
+        let requirements = {
+            length: password.length >= 8,
+            number: /[0-9]/.test(password),
+            uppercase: /[A-Z]/.test(password),
+            special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+        };
+        
+        // Update requirement indicators
+        const reqLength = document.getElementById('req-length');
+        reqLength.className = `requirement ${requirements.length ? 'valid' : 'invalid'}`;
+        reqLength.innerHTML = `<i class="fas ${requirements.length ? 'fa-check-circle' : 'fa-circle'}"></i><span>At least 8 characters</span>`;
+        
+        const reqNumber = document.getElementById('req-number');
+        reqNumber.className = `requirement ${requirements.number ? 'valid' : 'invalid'}`;
+        reqNumber.innerHTML = `<i class="fas ${requirements.number ? 'fa-check-circle' : 'fa-circle'}"></i><span>At least one number</span>`;
+        
+        const reqUppercase = document.getElementById('req-uppercase');
+        reqUppercase.className = `requirement ${requirements.uppercase ? 'valid' : 'invalid'}`;
+        reqUppercase.innerHTML = `<i class="fas ${requirements.uppercase ? 'fa-check-circle' : 'fa-circle'}"></i><span>At least one uppercase letter</span>`;
+        
+        const reqSpecial = document.getElementById('req-special');
+        reqSpecial.className = `requirement ${requirements.special ? 'valid' : 'invalid'}`;
+        reqSpecial.innerHTML = `<i class="fas ${requirements.special ? 'fa-check-circle' : 'fa-circle'}"></i><span>At least one special character (!@#$%^&*)</span>`;
+        
+        // Calculate strength
+        if (requirements.length) strength++;
+        if (requirements.number) strength++;
+        if (requirements.uppercase) strength++;
+        if (requirements.special) strength++;
+        
+        // Update strength bar
+        strengthBar.className = 'password-strength-bar';
+        if (strength === 0) {
+            strengthBar.style.width = '0%';
+            strengthText.textContent = 'Enter a password';
+            strengthText.className = 'text-xs text-gray-500 mt-1';
+        } else if (strength === 1) {
+            strengthBar.classList.add('strength-weak');
+            strengthText.textContent = 'Weak password';
+            strengthText.className = 'text-xs text-red-500 mt-1';
+        } else if (strength === 2) {
+            strengthBar.classList.add('strength-fair');
+            strengthText.textContent = 'Fair password';
+            strengthText.className = 'text-xs text-orange-500 mt-1';
+        } else if (strength === 3) {
+            strengthBar.classList.add('strength-good');
+            strengthText.textContent = 'Good password';
+            strengthText.className = 'text-xs text-blue-500 mt-1';
+        } else if (strength === 4) {
+            strengthBar.classList.add('strength-strong');
+            strengthText.textContent = 'Strong password!';
+            strengthText.className = 'text-xs text-green-600 mt-1 font-semibold';
+        }
+        
+        return strength === 4;
+    }
+    
+    function checkPasswordMatch() {
+        if (!passwordInput || !confirmInput) return;
+        
+        const password = passwordInput.value;
+        const confirm = confirmInput.value;
+        const matchMsg = document.getElementById('passwordMatchMsg');
+        
+        if (confirm.length === 0) {
+            matchMsg.innerHTML = '';
+            return;
+        }
+        
+        if (password === confirm && password.length > 0) {
+            matchMsg.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i> Passwords match';
+            matchMsg.className = 'text-xs text-green-600 mt-1';
+        } else {
+            matchMsg.innerHTML = '<i class="fas fa-exclamation-circle text-red-500 mr-1"></i> Passwords do not match';
+            matchMsg.className = 'text-xs text-red-500 mt-1';
+        }
+    }
+    
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            checkPasswordStrength(this.value);
+            checkPasswordMatch();
+        });
+    }
+    
+    if (confirmInput) {
+        confirmInput.addEventListener('input', checkPasswordMatch);
+    }
+</script>
+{% endblock %}

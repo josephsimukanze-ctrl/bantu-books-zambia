@@ -1,0 +1,18 @@
+/* Enhanced admin styling */
+.field-cover_preview img {
+    border-radius: 4px;
+    transition: transform 0.2s;
+}
+
+.field-cover_preview img:hover {
+    transform: scale(2);
+    z-index: 1000;
+}
+
+.column-price_display span {
+    font-weight: bold;
+}
+
+.results .action-checkbox {
+    width: 30px;
+}
