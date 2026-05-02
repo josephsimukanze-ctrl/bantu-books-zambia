@@ -97,7 +97,7 @@ class User(AbstractUser):
     total_views = models.IntegerField(default=0)
     
     # Status
-    is_verified = models.BooleanField(default=False)
+    id_verified = models.BooleanField(default=False)
     is_suspended = models.BooleanField(default=False)
     suspension_reason = models.TextField(blank=True)
     
