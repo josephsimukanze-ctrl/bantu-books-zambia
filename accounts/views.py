@@ -1853,7 +1853,43 @@ def get_biometric_status(request):
         })
     
     return JsonResponse({'has_biometric': False, 'credential_count': 0})
+from django.contrib.admin.views.decorators import staff_member_required
+from django.shortcuts import render
 
+@staff_member_required
+def admin_analytics(request):
+    """Admin analytics dashboard"""
+    from books.models import Book, Category
+    from .models import BookDownload, BookView, BookReadOnline, UserDownloadLimit
+    from django.db.models import Sum, Avg, Count
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    today = timezone.now().date()
+    last_month = today - timedelta(days=30)
+    
+    total_downloads = BookDownload.objects.count()
+    total_views = BookView.objects.count()
+    total_reads = BookReadOnline.objects.count()
+    active_users = UserDownloadLimit.objects.filter(downloads_today__gt=0).count()
+    
+    recent_downloads_count = BookDownload.objects.filter(downloaded_at__date__gte=last_month).count()
+    
+    # Popular books
+    popular_books = Book.objects.filter(is_active=True).annotate(
+        total_downloads=Sum('downloads_count')
+    ).order_by('-total_downloads')[:10]
+    
+    context = {
+        'total_downloads': total_downloads,
+        'total_views': total_views,
+        'total_reads': total_reads,
+        'active_users': active_users,
+        'recent_downloads_count': recent_downloads_count,
+        'popular_books': popular_books,
+    }
+    
+    return render(request, 'downloads/admin_dashboard.html', context)
 @csrf_exempt
 def biometric_login(request):
     """Handle biometric login via AJAX - Simplified version"""
