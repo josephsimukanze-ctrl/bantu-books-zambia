@@ -443,97 +443,106 @@
         document.getElementById('paymentModal').classList.remove('flex');
     }
     
-    function processPayment() {
-        if (!selectedPlan) {
-            alert('Please select a plan first');
-            return;
-        }
-        
-        if (!selectedPaymentMethod) {
-            alert('Please select a payment method');
-            return;
-        }
-        
-        // Get payment details
-        let paymentDetails = {};
-        let phoneNumber = null;
-        
-        if (selectedPaymentMethod === 'bank') {
-            const bankSelect = document.getElementById('bankSelect');
-            const accountName = document.getElementById('accountName');
-            const accountNumber = document.getElementById('accountNumber');
-            const branchName = document.getElementById('branchName');
-            
-            if (!bankSelect.value) {
-                alert('Please select a bank');
-                return;
-            }
-            if (!accountName.value) {
-                alert('Please enter account holder name');
-                return;
-            }
-            if (!accountNumber.value) {
-                alert('Please enter account number');
-                return;
-            }
-            
-            paymentDetails = {
-                bank: bankSelect.options[bankSelect.selectedIndex].text,
-                account_name: accountName.value,
-                account_number: accountNumber.value,
-                branch: branchName.value
-            };
-        } else {
-            phoneNumber = document.getElementById('paymentDetailsInput').value;
-            if (!phoneNumber) {
-                alert('Please enter your phone number');
-                return;
-            }
-            paymentDetails = {
-                phone_number: phoneNumber
-            };
-        }
-        
-        // Show loading overlay
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        loadingOverlay.classList.add('active');
-        
-        // Close payment modal
-        closePaymentModal();
-        
-        // Send payment request
-        fetch('{% url "accounts:process_upgrade_payment" %}', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                plan: selectedPlan,
-                payment_method: selectedPaymentMethod,
-                phone_number: phoneNumber,
-                bank_details: paymentDetails
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            loadingOverlay.classList.remove('active');
-            
-            if (data.success) {
-                showToast('✅ Upgrade successful! Redirecting to dashboard...', 'success');
-                setTimeout(() => {
-                    window.location.href = data.redirect_url;
-                }, 2000);
-            } else {
-                showToast(data.error || 'Payment failed. Please try again.', 'error');
-            }
-        })
-        .catch(error => {
-            loadingOverlay.classList.remove('active');
-            showToast('An error occurred. Please try again.', 'error');
-            console.error('Error:', error);
-        });
+function processPayment() {
+    if (!selectedPlan) {
+        showToast('Please select a plan first', 'error');
+        return;
     }
+    
+    if (!selectedPaymentMethod) {
+        showToast('Please select a payment method', 'error');
+        return;
+    }
+    
+    // Get payment details
+    let paymentDetails = {};
+    let phoneNumber = null;
+    
+    if (selectedPaymentMethod === 'bank') {
+        const bankSelect = document.getElementById('bankSelect');
+        const accountName = document.getElementById('accountName');
+        const accountNumber = document.getElementById('accountNumber');
+        const branchName = document.getElementById('branchName');
+        
+        if (!bankSelect.value) {
+            showToast('Please select a bank', 'error');
+            return;
+        }
+        if (!accountName.value.trim()) {
+            showToast('Please enter account holder name', 'error');
+            return;
+        }
+        if (!accountNumber.value.trim()) {
+            showToast('Please enter account number', 'error');
+            return;
+        }
+        
+        paymentDetails = {
+            bank: bankSelect.options[bankSelect.selectedIndex].text,
+            account_name: accountName.value.trim(),
+            account_number: accountNumber.value.trim(),
+            branch: branchName.value.trim() || 'Not specified'
+        };
+    } else {
+        phoneNumber = document.getElementById('paymentDetailsInput').value.trim();
+        if (!phoneNumber) {
+            showToast('Please enter your phone number', 'error');
+            return;
+        }
+        // Validate Zambian phone number format
+        const phoneRegex = /^(09[57][0-9]{7}|09[57][0-9]{7})$/;
+        if (!phoneRegex.test(phoneNumber)) {
+            showToast('Please enter a valid Zambian phone number (e.g., 0977123456)', 'error');
+            return;
+        }
+        paymentDetails = {
+            phone_number: phoneNumber
+        };
+    }
+    
+    // Show loading overlay
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    loadingOverlay.classList.add('active');
+    
+    // Close payment modal
+    closePaymentModal();
+    
+    // Send payment request
+    fetch('{% url "accounts:process_upgrade_payment" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            plan: selectedPlan,
+            payment_method: selectedPaymentMethod,
+            phone_number: phoneNumber,
+            bank_details: paymentDetails,
+            // Add these boolean fields explicitly as booleans
+            accept_terms: true,
+            confirm_payment: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingOverlay.classList.remove('active');
+        
+        if (data.success) {
+            showToast('✅ Upgrade successful! Redirecting to dashboard...', 'success');
+            setTimeout(() => {
+                window.location.href = data.redirect_url;
+            }, 2000);
+        } else {
+            showToast(data.error || 'Payment failed. Please try again.', 'error');
+        }
+    })
+    .catch(error => {
+        loadingOverlay.classList.remove('active');
+        showToast('An error occurred. Please try again.', 'error');
+        console.error('Error:', error);
+    });
+}
     
     function showToast(message, type) {
         const toast = document.createElement('div');
