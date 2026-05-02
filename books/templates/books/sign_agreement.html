@@ -76,29 +76,86 @@
         color: #059669;
         font-weight: bold;
     }
+    
+    /* Dark Mode */
+    .dark .agreement-content {
+        background: #1f2937;
+        border-color: #374151;
+        color: #d1d5db;
+    }
+    
+    .dark .bg-white {
+        background-color: #1f2937 !important;
+    }
+    
+    .dark .signature-pad-container {
+        background: #374151;
+        border-color: #4b5563;
+    }
+    
+    .dark .signature-label {
+        color: #d1d5db;
+    }
+    
+    .dark .bg-green-50 {
+        background-color: #064e3b !important;
+    }
+    
+    .dark .text-green-800 {
+        color: #a7f3d0 !important;
+    }
+    
+    .dark .text-gray-700 {
+        color: #d1d5db !important;
+    }
+    
+    .dark .bg-gray-50 {
+        background-color: #374151 !important;
+    }
+    
+    .dark .agreement-header {
+        background: linear-gradient(135deg, #047857 0%, #059669 100%);
+    }
+    
+    .dark .btn-sign {
+        background: linear-gradient(135deg, #047857 0%, #059669 100%);
+    }
+    
+    .checkmark-list li:before {
+        color: #10b981;
+    }
+    
+    @media (max-width: 640px) {
+        .agreement-header {
+            padding: 1rem;
+        }
+        .agreement-header h1 {
+            font-size: 1.25rem;
+        }
+        .agreement-content {
+            padding: 1rem;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
     <div class="agreement-container">
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-            <!-- Header -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
             <div class="agreement-header">
                 <h1 class="text-2xl font-bold mb-2">Contributor Agreement</h1>
                 <p class="text-green-100">Please review and sign the agreement to become a contributor</p>
             </div>
             
-            <!-- Agreement Content -->
             <div class="p-6">
                 <div class="agreement-content">
                     {{ agreement.content|safe }}
                 </div>
                 
-                <!-- Key Points Summary -->
-                <div class="bg-green-50 rounded-lg p-4 mb-6">
-                    <h3 class="font-bold text-green-800 mb-3">Key Points Summary:</h3>
-                    <ul class="checkmark-list space-y-2 text-sm text-gray-700">
+                <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 mb-6">
+                    <h3 class="font-bold text-green-800 dark:text-green-300 mb-3">Key Points Summary:</h3>
+                    <ul class="checkmark-list space-y-2 text-sm text-gray-700 dark:text-gray-300">
                         <li>Earn K5.00 for each approved book uploaded</li>
                         <li>Monthly payouts on the 15th (minimum K250)</li>
                         <li>You retain ownership of your content</li>
@@ -108,56 +165,50 @@
                     </ul>
                 </div>
                 
-                <!-- Signature Pad -->
                 <form method="post" id="agreementForm">
                     {% csrf_token %}
                     
                     <div class="mb-4">
                         <label class="signature-label">
-                            <i class="fas fa-pen mr-2 text-green-600"></i>
+                            <i class="fas fa-pen mr-2 text-green-600 dark:text-green-400"></i>
                             Digital Signature
                         </label>
                         <div class="signature-pad-container">
                             <canvas id="signatureCanvas" width="600" height="200"></canvas>
                         </div>
-                        <div class="flex gap-3 mt-2">
-                            <button type="button" onclick="clearSignature()" class="text-sm text-gray-500 hover:text-gray-700">
+                        <div class="flex gap-3 mt-2 flex-wrap">
+                            <button type="button" onclick="clearSignature()" class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition">
                                 <i class="fas fa-eraser mr-1"></i> Clear
                             </button>
-                            <button type="button" onclick="undoSignature()" class="text-sm text-gray-500 hover:text-gray-700">
+                            <button type="button" onclick="undoSignature()" class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition">
                                 <i class="fas fa-undo mr-1"></i> Undo
-                            </button>
-                            <button type="button" onclick="saveSignature()" class="text-sm text-green-600 hover:text-green-700">
-                                <i class="fas fa-save mr-1"></i> Save Signature
                             </button>
                         </div>
                         <input type="hidden" id="signature_data" name="signature_data" required>
-                        <p class="text-xs text-gray-500 mt-2">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
                             <i class="fas fa-info-circle mr-1"></i>
                             Sign using your mouse or touch screen. Your signature will be legally binding.
                         </p>
                     </div>
                     
-                    <!-- Signature Preview -->
-                    <div id="signaturePreview" class="hidden mb-4 p-3 bg-gray-50 rounded-lg">
-                        <p class="text-sm font-semibold text-gray-700 mb-2">Signature Preview:</p>
-                        <img id="signatureImage" class="border rounded-lg" style="max-height: 80px;">
+                    <div id="signaturePreview" class="hidden mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Signature Preview:</p>
+                        <img id="signatureImage" class="border rounded-lg dark:border-gray-600" style="max-height: 80px;">
                     </div>
                     
-                    <div class="flex gap-3 mt-6">
-                        <button type="submit" class="flex-1 btn-sign text-white py-3 rounded-lg font-semibold">
+                    <div class="flex gap-3 mt-6 flex-col sm:flex-row">
+                        <button type="submit" class="flex-1 btn-sign text-white py-3 rounded-lg font-semibold transition">
                             <i class="fas fa-signature mr-2"></i> Sign Agreement
                         </button>
-                        <a href="{% url 'books:contributor_dashboard' %}" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold text-center hover:bg-gray-300 transition">
+                        <a href="{% url 'books:contributor_dashboard' %}" class="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-semibold text-center hover:bg-gray-300 dark:hover:bg-gray-600 transition">
                             Cancel
                         </a>
                     </div>
                 </form>
                 
-                <p class="text-center text-xs text-gray-500 mt-6">
+                <p class="text-center text-xs text-gray-500 dark:text-gray-400 mt-6">
                     <i class="fas fa-lock mr-1"></i> 
                     By signing, you agree to the terms and conditions outlined above.
-                    Your signature will be recorded with timestamp and IP address.
                 </p>
             </div>
         </div>
@@ -167,57 +218,46 @@
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 <script>
     let signaturePad = null;
-    let canvas = null;
     
     function initSignaturePad() {
-        canvas = document.getElementById('signatureCanvas');
+        const canvas = document.getElementById('signatureCanvas');
         if (!canvas) return;
         
-        // Set canvas dimensions properly
         function resizeCanvas() {
-            const ratio = Math.max(window.devicePixelRatio || 1, 1);
             const container = canvas.parentElement;
             const width = container.clientWidth;
             const height = 200;
             
-            canvas.width = width * ratio;
-            canvas.height = height * ratio;
+            canvas.width = width;
+            canvas.height = height;
             canvas.style.width = width + 'px';
             canvas.style.height = height + 'px';
             
-            const ctx = canvas.getContext('2d');
-            ctx.scale(ratio, ratio);
-            
             if (signaturePad) {
+                const data = signaturePad.toData();
                 signaturePad.clear();
+                if (data && data.length > 0) {
+                    signaturePad.fromData(data);
+                }
             }
         }
         
-        // Initialize signature pad
         signaturePad = new SignaturePad(canvas, {
             backgroundColor: 'rgb(255, 255, 255)',
             penColor: 'rgb(5, 150, 105)',
             velocityFilterWeight: 0.7,
             minWidth: 1,
-            maxWidth: 3,
-            throttle: 16
+            maxWidth: 3
         });
         
-        // Resize on load and window resize
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
         
-        // Update hidden input on signature change
         signaturePad.addEventListener('endStroke', function() {
             if (!signaturePad.isEmpty()) {
-                const signatureData = signaturePad.toDataURL();
-                document.getElementById('signature_data').value = signatureData;
-                
-                // Show preview
-                const preview = document.getElementById('signaturePreview');
-                const previewImg = document.getElementById('signatureImage');
-                previewImg.src = signatureData;
-                preview.classList.remove('hidden');
+                document.getElementById('signature_data').value = signaturePad.toDataURL();
+                document.getElementById('signatureImage').src = signaturePad.toDataURL();
+                document.getElementById('signaturePreview').classList.remove('hidden');
             }
         });
     }
@@ -241,32 +281,13 @@
                     document.getElementById('signature_data').value = '';
                     document.getElementById('signaturePreview').classList.add('hidden');
                 } else {
-                    const signatureData = signaturePad.toDataURL();
-                    document.getElementById('signature_data').value = signatureData;
-                    document.getElementById('signatureImage').src = signatureData;
+                    document.getElementById('signature_data').value = signaturePad.toDataURL();
+                    document.getElementById('signatureImage').src = signaturePad.toDataURL();
                 }
             }
         }
     }
     
-    function saveSignature() {
-        if (signaturePad && !signaturePad.isEmpty()) {
-            const signatureData = signaturePad.toDataURL();
-            document.getElementById('signature_data').value = signatureData;
-            
-            // Show preview
-            const preview = document.getElementById('signaturePreview');
-            const previewImg = document.getElementById('signatureImage');
-            previewImg.src = signatureData;
-            preview.classList.remove('hidden');
-            
-            alert('Signature saved! Please submit the form to complete signing.');
-        } else {
-            alert('Please draw your signature first.');
-        }
-    }
-    
-    // Validate form before submission
     document.getElementById('agreementForm').addEventListener('submit', function(e) {
         const signatureData = document.getElementById('signature_data').value;
         if (!signatureData) {
@@ -275,7 +296,6 @@
         }
     });
     
-    // Initialize on page load
     document.addEventListener('DOMContentLoaded', initSignaturePad);
 </script>
 {% endblock %}
