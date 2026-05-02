@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 class Command(BaseCommand):
-    help = 'Add College Materials categories to existing structure'
+    help = 'Add College, University Materials, and Zambian Newspapers categories'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -26,14 +26,14 @@ class Command(BaseCommand):
         if dry_run:
             self.stdout.write(self.style.WARNING('🔍 DRY RUN MODE - No changes will be made\n'))
         
-        # Define the College Materials hierarchy
+        # Define the hierarchy
         hierarchy_structure = self.get_hierarchy_structure()
         
         if dry_run:
             self.show_dry_run_preview(hierarchy_structure)
             return
         
-        # Create categories (will only add College Materials, won't delete anything)
+        # Create categories
         created_count, updated_count, errors = self.create_categories(hierarchy_structure)
         
         # Print summary
@@ -44,7 +44,7 @@ class Command(BaseCommand):
             self.print_category_tree()
 
     def get_hierarchy_structure(self):
-        """Define the complete category hierarchy structure - ONLY COLLEGE MATERIALS"""
+        """Define the complete category hierarchy structure - COLLEGE, UNIVERSITY, AND NEWSPAPERS"""
         return {
             'College Materials': {
                 'icon': 'university',
@@ -119,6 +119,202 @@ class Command(BaseCommand):
                     },
                 }
             },
+            'University Materials': {
+                'icon': 'university',
+                'order': 2,
+                'description': 'University level lecture notes, textbooks, and research materials',
+                'subcategories': {
+                    'University of Zambia (UNZA)': {
+                        'order': 1,
+                        'icon': 'landmark',
+                        'description': 'Academic materials from the University of Zambia',
+                        'subjects': [
+                            {'name': 'Medicine', 'icon': 'stethoscope', 'order': 1},
+                            {'name': 'Engineering', 'icon': 'hard-hat', 'order': 2},
+                            {'name': 'Law', 'icon': 'gavel', 'order': 3},
+                            {'name': 'Business', 'icon': 'chart-line', 'order': 4},
+                            {'name': 'Education', 'icon': 'chalkboard-teacher', 'order': 5},
+                            {'name': 'Natural Sciences', 'icon': 'flask', 'order': 6},
+                            {'name': 'Humanities', 'icon': 'book', 'order': 7},
+                            {'name': 'Social Sciences', 'icon': 'users', 'order': 8},
+                            {'name': 'Agriculture', 'icon': 'leaf', 'order': 9},
+                            {'name': 'Veterinary Medicine', 'icon': 'paw', 'order': 10},
+                        ]
+                    },
+                    'Copperbelt University (CBU)': {
+                        'order': 2,
+                        'icon': 'industry',
+                        'description': 'Academic materials from Copperbelt University',
+                        'subjects': [
+                            {'name': 'Mining Engineering', 'icon': 'pickaxe', 'order': 1},
+                            {'name': 'Mechanical Engineering', 'icon': 'cogs', 'order': 2},
+                            {'name': 'Electrical Engineering', 'icon': 'bolt', 'order': 3},
+                            {'name': 'Business Administration', 'icon': 'chart-line', 'order': 4},
+                            {'name': 'Environmental Engineering', 'icon': 'leaf', 'order': 5},
+                            {'name': 'Chemical Engineering', 'icon': 'flask', 'order': 6},
+                            {'name': 'Civil Engineering', 'icon': 'building', 'order': 7},
+                            {'name': 'Computer Science', 'icon': 'laptop-code', 'order': 8},
+                        ]
+                    },
+                    'Mulungushi University': {
+                        'order': 3,
+                        'icon': 'university',
+                        'description': 'Academic materials from Mulungushi University',
+                        'subjects': [
+                            {'name': 'Commerce', 'icon': 'shopping-cart', 'order': 1},
+                            {'name': 'Social Sciences', 'icon': 'users', 'order': 2},
+                            {'name': 'Information Technology', 'icon': 'laptop-code', 'order': 3},
+                            {'name': 'Economics', 'icon': 'chart-line', 'order': 4},
+                            {'name': 'Development Studies', 'icon': 'globe', 'order': 5},
+                        ]
+                    },
+                    'Kwame Nkrumah University': {
+                        'order': 4,
+                        'icon': 'university',
+                        'description': 'Academic materials from Kwame Nkrumah University',
+                        'subjects': [
+                            {'name': 'Agricultural Sciences', 'icon': 'leaf', 'order': 1},
+                            {'name': 'Natural Resources', 'icon': 'mountain', 'order': 2},
+                            {'name': 'Environmental Sciences', 'icon': 'globe', 'order': 3},
+                            {'name': 'Food Science', 'icon': 'apple-alt', 'order': 4},
+                        ]
+                    },
+                    'Chalimbana University': {
+                        'order': 5,
+                        'icon': 'university',
+                        'description': 'Academic materials from Chalimbana University',
+                        'subjects': [
+                            {'name': 'Education', 'icon': 'chalkboard-teacher', 'order': 1},
+                            {'name': 'Special Education', 'icon': 'hand-holding-heart', 'order': 2},
+                            {'name': 'Educational Psychology', 'icon': 'brain', 'order': 3},
+                            {'name': 'Curriculum Studies', 'icon': 'book', 'order': 4},
+                        ]
+                    },
+                    'Lusaka Apex Medical University': {
+                        'order': 6,
+                        'icon': 'hospital',
+                        'description': 'Medical and health sciences materials',
+                        'subjects': [
+                            {'name': 'Medicine', 'icon': 'stethoscope', 'order': 1},
+                            {'name': 'Pharmacy', 'icon': 'prescription-bottle', 'order': 2},
+                            {'name': 'Nursing', 'icon': 'heartbeat', 'order': 3},
+                            {'name': 'Public Health', 'icon': 'hospital', 'order': 4},
+                            {'name': 'Biomedical Sciences', 'icon': 'dna', 'order': 5},
+                        ]
+                    },
+                    'DMI St. Eugene University': {
+                        'order': 7,
+                        'icon': 'university',
+                        'description': 'Academic materials from DMI St. Eugene University',
+                        'subjects': [
+                            {'name': 'Business Management', 'icon': 'chart-line', 'order': 1},
+                            {'name': 'Information Technology', 'icon': 'laptop-code', 'order': 2},
+                            {'name': 'Theology', 'icon': 'pray', 'order': 3},
+                            {'name': 'Humanities', 'icon': 'book', 'order': 4},
+                        ]
+                    },
+                    'Northrise University': {
+                        'order': 8,
+                        'icon': 'university',
+                        'description': 'Academic materials from Northrise University',
+                        'subjects': [
+                            {'name': 'Business Administration', 'icon': 'chart-line', 'order': 1},
+                            {'name': 'Computer Science', 'icon': 'laptop-code', 'order': 2},
+                            {'name': 'Theology', 'icon': 'pray', 'order': 3},
+                            {'name': 'Education', 'icon': 'chalkboard-teacher', 'order': 4},
+                        ]
+                    },
+                    'ZCAS University': {
+                        'order': 9,
+                        'icon': 'university',
+                        'description': 'Academic materials from ZCAS University',
+                        'subjects': [
+                            {'name': 'Accounting', 'icon': 'calculator', 'order': 1},
+                            {'name': 'Finance', 'icon': 'money-bill', 'order': 2},
+                            {'name': 'Business Administration', 'icon': 'chart-line', 'order': 3},
+                            {'name': 'Information Systems', 'icon': 'laptop-code', 'order': 4},
+                        ]
+                    },
+                    'Victoria Falls University': {
+                        'order': 10,
+                        'icon': 'water',
+                        'description': 'Academic materials from Victoria Falls University',
+                        'subjects': [
+                            {'name': 'Tourism Management', 'icon': 'umbrella-beach', 'order': 1},
+                            {'name': 'Hospitality Management', 'icon': 'hotel', 'order': 2},
+                            {'name': 'Business Management', 'icon': 'chart-line', 'order': 3},
+                        ]
+                    },
+                }
+            },
+            'Zambian Newspapers': {
+                'icon': 'newspaper',
+                'order': 3,
+                'description': 'Digital archives of Zambian newspapers and publications',
+                'subcategories': {
+                    'Daily Newspapers': {
+                        'order': 1,
+                        'icon': 'newspaper',
+                        'description': 'Daily Zambian newspapers',
+                        'subjects': [
+                            {'name': 'Zambia Daily Mail', 'icon': 'newspaper', 'order': 1},
+                            {'name': 'Times of Zambia', 'icon': 'newspaper', 'order': 2},
+                            {'name': 'The Mast', 'icon': 'newspaper', 'order': 3},
+                            {'name': 'Daily Nation Zambia', 'icon': 'newspaper', 'order': 4},
+                        ]
+                    },
+                    'Weekly Newspapers': {
+                        'order': 2,
+                        'icon': 'calendar-week',
+                        'description': 'Weekly Zambian newspapers',
+                        'subjects': [
+                            {'name': 'Zambia Daily Mail Weekend Edition', 'icon': 'newspaper', 'order': 1},
+                            {'name': 'Times of Zambia Weekend', 'icon': 'newspaper', 'order': 2},
+                            {'name': 'The Weekend Post', 'icon': 'newspaper', 'order': 3},
+                            {'name': 'Sunday Times of Zambia', 'icon': 'newspaper', 'order': 4},
+                        ]
+                    },
+                    'Sunday Newspapers': {
+                        'order': 3,
+                        'icon': 'calendar-day',
+                        'description': 'Sunday edition Zambian newspapers',
+                        'subjects': [
+                            {'name': 'Sunday Mail', 'icon': 'newspaper', 'order': 1},
+                            {'name': 'Sunday Times', 'icon': 'newspaper', 'order': 2},
+                            {'name': 'Sunday Post', 'icon': 'newspaper', 'order': 3},
+                        ]
+                    },
+                    'Community Newspapers': {
+                        'order': 4,
+                        'icon': 'users',
+                        'description': 'Local community newspapers',
+                        'subjects': [
+                            {'name': 'Luanshya Times', 'icon': 'newspaper', 'order': 1},
+                            {'name': 'Kitwe Times', 'icon': 'newspaper', 'order': 2},
+                            {'name': 'Ndola Post', 'icon': 'newspaper', 'order': 3},
+                            {'name': 'Livingstone Sun', 'icon': 'sun', 'order': 4},
+                            {'name': 'Chipata Journal', 'icon': 'newspaper', 'order': 5},
+                            {'name': 'Kasama Observer', 'icon': 'newspaper', 'order': 6},
+                            {'name': 'Solwezi Star', 'icon': 'star', 'order': 7},
+                        ]
+                    },
+                    'Digital News Platforms': {
+                        'order': 5,
+                        'icon': 'laptop',
+                        'description': 'Online Zambian news platforms',
+                        'subjects': [
+                            {'name': 'Lusaka Times', 'icon': 'globe', 'order': 1},
+                            {'name': 'Zambia Reports', 'icon': 'globe', 'order': 2},
+                            {'name': 'News Diggers', 'icon': 'globe', 'order': 3},
+                            {'name': 'Zambia Watchdog', 'icon': 'globe', 'order': 4},
+                            {'name': 'Mwebantu', 'icon': 'globe', 'order': 5},
+                            {'name': 'Zambian Eye', 'icon': 'globe', 'order': 6},
+                            {'name': 'Breeze FM News', 'icon': 'globe', 'order': 7},
+                            {'name': 'Zedgossip', 'icon': 'globe', 'order': 8},
+                        ]
+                    },
+                }
+            },
         }
 
     def create_categories(self, hierarchy_structure):
@@ -183,7 +379,7 @@ class Command(BaseCommand):
                     full_subject_name = f"{parent_name} - {sub_name} - {subject['name']}"
                     subject_slug = slugify(full_subject_name)
                     
-                    # Shorten name if too long (max 190 chars)
+                    # Shorten name if too long
                     if len(full_subject_name) > 190:
                         full_subject_name = full_subject_name[:187] + "..."
                     
@@ -228,7 +424,7 @@ class Command(BaseCommand):
 
     def print_summary(self, created_count, updated_count, errors):
         """Print summary of category creation"""
-        self.stdout.write(self.style.SUCCESS(f'\n✅ College Materials categories added successfully!'))
+        self.stdout.write(self.style.SUCCESS(f'\n✅ College, University, and Newspaper categories added successfully!'))
         self.stdout.write(f'   Created: {created_count}')
         
         # Print statistics
